@@ -40,11 +40,20 @@ def update_data():
     conn = init_db()
     c = conn.cursor()
     
+    fetched_ids = set()
+    
     for item in INDICATORS:
-        print(f"Fetching history for {item['id']}...")
-        observations = fetch_historical_observations(item['id'], item['units'], item['points'])
+        series_id = item['id']
+        if series_id in fetched_ids:
+            print(f"Skipping duplicate fetch for {series_id}...")
+            continue
+            
+        print(f"Fetching history for {series_id}...")
+        observations = fetch_historical_observations(series_id, item['units'], item['points'])
         if not observations:
             continue
+            
+        fetched_ids.add(series_id)
             
         updated_at = datetime.now().isoformat()
         

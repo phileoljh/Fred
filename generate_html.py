@@ -80,7 +80,7 @@ def get_data_for_ui():
 
 
 def generate_html(data):
-    frequencies = ["Daily", "Weekly", "Monthly", "Quarterly"]
+    frequencies = ["Priority", "Daily", "Weekly", "Monthly", "Quarterly"]
     grouped = {f: {} for f in frequencies}
     
     for item in data:
@@ -306,7 +306,7 @@ def generate_html(data):
         has_items = any(len(cats) > 0 for cats in grouped[freq].values())
         if not has_items: continue
         
-        freq_zh = {"Daily": "日更新", "Weekly": "週更新", "Monthly": "月更新", "Quarterly": "季更新"}.get(freq, freq)
+        freq_zh = {"Priority": "🌟 優先關注指標", "Daily": "日更新", "Weekly": "週更新", "Monthly": "月更新", "Quarterly": "季更新"}.get(freq, freq)
         html_content += f'<div class="frequency-section"><h2 class="frequency-title">{freq_zh} ({freq})</h2>'
         
         for cat, items in grouped[freq].items():
@@ -454,7 +454,7 @@ def generate_ai_html(data):
     Generates a simplified, text/semantic-heavy HTML for LLM consumption.
     Ignores styling, JavaScript, or charts completely.
     """
-    frequencies = ["Daily", "Weekly", "Monthly", "Quarterly"]
+    frequencies = ["Priority", "Daily", "Weekly", "Monthly", "Quarterly"]
     grouped = {f: {} for f in frequencies}
     
     for item in data:
@@ -490,7 +490,7 @@ def generate_ai_html(data):
 """
     for freq in frequencies:
         if not grouped[freq]: continue
-        freq_zh = {"Daily": "日更新", "Weekly": "週更新", "Monthly": "月更新", "Quarterly": "季更新"}.get(freq, freq)
+        freq_zh = {"Priority": "🌟 優先關注指標", "Daily": "日更新", "Weekly": "週更新", "Monthly": "月更新", "Quarterly": "季更新"}.get(freq, freq)
         
         for cat, items in grouped[freq].items():
             if not items: continue
