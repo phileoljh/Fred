@@ -22,10 +22,9 @@ def get_data_for_ui():
     all_indicators.insert(3, spread_info) # Insert after SOFR
     
     for item in all_indicators:
-        limit = item.get('points', 30)
-        
         try:
-            c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT ?", (item['id'], limit))
+            # Query exactly 18 months of history from database context
+            c.execute("SELECT value, date FROM observations WHERE series_id=? AND date >= date('now', '-18 months') ORDER BY date DESC", (item['id'],))
             rows = c.fetchall()
         except sqlite3.OperationalError:
             rows = []
