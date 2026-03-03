@@ -19,3 +19,4 @@ ai_view.html
 
 # Environment variables
 .env
+!.env.example
