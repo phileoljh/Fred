@@ -23,15 +23,16 @@ INDICATORS = [
     {"id": "DRBLACBS", "name": "商業貸款違約率 (Delinquency Rate: Business Loans)", "freq": "Priority", "category": "榮景期指標 (Priority)", "units": "lin", "format": "{value}%", "points": 6},
 
     # 衰退期指標 (Recession)
-    {"id": "PCE", "name": "個人消費年增率 (PCE)", "freq": "Recession", "category": "衰退期指標 (Recession)", "units": "pc1", "format": "{value}% YoY", "points": 18},
-    {"id": "FPI", "name": "民間投資 (Fixed Private Investment)", "freq": "Recession", "category": "衰退期指標 (Recession)", "units": "pc1", "format": "{value}% YoY", "points": 6},
-    {"id": "RSXFS", "name": "民間消費 - 零售銷售 (Retail Sales)", "freq": "Recession", "category": "衰退期指標 (Recession)", "units": "pc1", "format": "{value}% YoY", "points": 18},
+    {"id": "PCE", "name": "個人消費支出 (PCE)", "freq": "Recession", "category": "衰退期指標 (Recession)", "units": "pc1", "format": "{value}% YoY", "points": 18},
+    {"id": "FPI", "name": "固定私人投資 (Fixed Private Investment)", "freq": "Recession", "category": "衰退期指標 (Recession)", "units": "pc1", "format": "{value}% YoY", "points": 6},
+    {"id": "RSXFS", "name": "零售銷售 (Retail Sales)", "freq": "Recession", "category": "衰退期指標 (Recession)", "units": "pc1", "format": "{value}% YoY", "points": 18},
     # 附註：採購經理人指數 (PMI) 不在原本的清單下方，因此先略過。
     
     # 復甦期指標 (Recovery)
-    {"id": "PCEDG", "name": "個人耐久財消費 (PCE: Durable Goods)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 18},
-    {"id": "RSXFS", "name": "零售銷售年增率 (Retail Sales)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 18},
-    {"id": "DGORDER", "name": "耐久財訂單 (Durable Goods Orders)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 18},
+    {"id": "ICSA", "name": "初領失業金人數 (Initial Claims)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "lin", "format": "{value}", "points": 72},
+    {"id": "PCEDG", "name": "耐久財消費支出 (PCE: Durable Goods)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 18},
+    {"id": "RSXFS", "name": "零售銷售 (Retail Sales)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 18},
+    {"id": "DGORDER", "name": "耐久財新訂單 (Durable Goods Orders)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 18},
     {"id": "IMPGS", "name": "進口金額年增率 (Imports)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 6},
 
     # Daily
