@@ -22,6 +22,18 @@ INDICATORS = [
     {"id": "DRCCLACBS", "name": "信用卡違約率 (Delinquency Rate: Credit Card Loans)", "freq": "Priority", "category": "榮景期指標 (Priority)", "units": "lin", "format": "{value}%", "points": 6},
     {"id": "DRBLACBS", "name": "商業貸款違約率 (Delinquency Rate: Business Loans)", "freq": "Priority", "category": "榮景期指標 (Priority)", "units": "lin", "format": "{value}%", "points": 6},
 
+    # 衰退期指標 (Recession)
+    {"id": "PCE", "name": "個人消費年增率 (PCE)", "freq": "Recession", "category": "衰退期指標 (Recession)", "units": "pc1", "format": "{value}% YoY", "points": 18},
+    {"id": "FPI", "name": "民間投資 (Fixed Private Investment)", "freq": "Recession", "category": "衰退期指標 (Recession)", "units": "pc1", "format": "{value}% YoY", "points": 6},
+    {"id": "RSXFS", "name": "民間消費 - 零售銷售 (Retail Sales)", "freq": "Recession", "category": "衰退期指標 (Recession)", "units": "pc1", "format": "{value}% YoY", "points": 18},
+    # 附註：採購經理人指數 (PMI) 不在原本的清單下方，因此先略過。
+    
+    # 復甦期指標 (Recovery)
+    {"id": "PCEDG", "name": "個人耐久財消費 (PCE: Durable Goods)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 18},
+    {"id": "RSXFS", "name": "零售銷售年增率 (Retail Sales)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 18},
+    {"id": "DGORDER", "name": "耐久財訂單 (Durable Goods Orders)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 18},
+    {"id": "IMPGS", "name": "進口金額年增率 (Imports)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 6},
+
     # Daily
     {"id": "T10Y2Y", "name": "10年期減2年期公債利差 (10Y-2Y Spread)", "freq": "Daily", "category": "Rates & Spreads", "units": "lin", "format": "{value}%", "points": 30},
     {"id": "IORB", "name": "準備金餘額利率 (IORB)", "freq": "Daily", "category": "Rates & Spreads", "units": "lin", "format": "{value}%", "points": 30},
@@ -55,4 +67,5 @@ INDICATORS = [
     {"id": "SLCEC1", "name": "州和地方政府消費支出 (State & Local Gov Consumption)", "freq": "Quarterly", "category": "Investment & Gov", "units": "pc1", "format": "{value}% YoY", "points": 6},
     {"id": "DRBLACBS", "name": "商業貸款違約率 (Delinquency Rate: Business Loans)", "freq": "Quarterly", "category": "Credit Delinquency", "units": "lin", "format": "{value}%", "points": 6},
     {"id": "DRCCLACBS", "name": "信用卡違約率 (Delinquency Rate: Credit Card Loans)", "freq": "Quarterly", "category": "Credit Delinquency", "units": "lin", "format": "{value}%", "points": 6},
+    {"id": "IMPGS", "name": "進口金額年增率 (Imports)", "freq": "Quarterly", "category": "Trade", "units": "pc1", "format": "{value}% YoY", "points": 6},
 ]
