@@ -1,5 +1,7 @@
 import sqlite3
 import json
+import os
+import sys
 from datetime import datetime
 from config import DB_PATH, HTML_PATH, AI_HTML_PATH, INDICATORS
 
@@ -30,6 +32,8 @@ def get_data_for_ui():
             rows = []
         
         history = []
+        history_baseline = []
+        baseline_display = ""
         display_val = "N/A"
         date_val = "N/A"
         val_float = None
@@ -115,13 +119,13 @@ def generate_html(data):
         "復甦期指標 (Recovery)",
         "Labor Market",
         "Rates & Spreads",
+        "Credit Risk",
+        "Credit Delinquency",
         "Consumption & Sentiment",
         "Production & Manufacturing",
         "Monetary & Inflation",
         "GDP Output",
         "Investment & Gov",
-        "Credit Risk",
-        "Credit Delinquency",
         "Trade"
     ]
     
@@ -620,6 +624,10 @@ def generate_ai_html(data):
 
 
 if __name__ == "__main__":
+    if not os.path.exists(DB_PATH):
+        print(f"[警告] 找不到資料庫檔案 '{DB_PATH}'！請先執行 'python init_db.py' 去抓取歷史資料後再嘗試產生網頁。")
+        sys.exit(1)
+        
     print("Generating HTML dashboards...")
     ui_data = get_data_for_ui()
     generate_html(ui_data)
