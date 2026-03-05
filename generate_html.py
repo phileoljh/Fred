@@ -53,6 +53,34 @@ def get_data_for_ui():
                     history.append({'x': row[1], 'y': float(row[0])})
                 except:
                     pass
+            
+            # Calculate baseline (0-axis or 18-mo avg)
+            baseline_val = None
+            if history:
+                y_vals = [h['y'] for h in history]
+                min_y, max_y = min(y_vals), max(y_vals)
+                
+                # Force 0.0 baseline if the metric crosses zero, OR if it's a spread/percentage 
+                # that logically fluctuates around a zero-growth/zero-yield mark.
+                is_spread_or_growth = ("利差" in item['name'] or "Spread" in item['name'] or "年增率" in item['name'])
+                
+                if (min_y < 0 and max_y > 0) or is_spread_or_growth:
+                    baseline_val = 0.0
+                else:
+                    baseline_val = sum(y_vals) / len(y_vals)
+                    
+            history_baseline = [{'x': h['x'], 'y': baseline_val} for h in history] if baseline_val is not None else []
+            
+            baseline_display = ""
+            if baseline_val is not None:
+                if baseline_val == 0.0:
+                    baseline_display = "0.00"
+                else:
+                    if item['id'] == 'ICSA':
+                        baseline_display = f"{baseline_val / 1000:.1f}K"
+                    else:
+                        baseline_display = f"{baseline_val:.2f}"
+                baseline_display = item['format'].format(value=baseline_display)
         
         # Split English and Chinese for cleaner UI
         full_name = item['name']
@@ -71,6 +99,8 @@ def get_data_for_ui():
             'date': date_val, 
             'raw_val': val_float,
             'history': history,
+            'history_baseline': history_baseline,
+            'baseline_display_val': baseline_display,
             'chart_id': f"chart_{item['freq']}_{item['id'].replace('-', '_')}"
         })
         
@@ -359,9 +389,16 @@ def generate_html(data):
                     charts_config_json.append({
                         "id": item['chart_id'],
                         "data": item['history'],
+                        "baseline": item['history_baseline'],
                         "is_negative": (item['id'] == 'SAHMREALTIME' and item['raw_val'] >= 0.5)
                     })
                 
+                baseline_html = ""
+                if item.get('baseline_display_val'):
+                    is_zero = item['baseline_display_val'].startswith("0.00") or item['baseline_display_val'] == "0.00%"
+                    baseline_label = "0 軸" if is_zero else "18 均"
+                    baseline_html = f'<div class="baseline-badge" style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"><line x1="2" y1="12" x2="22" y2="12"></line></svg>{baseline_label} {item["baseline_display_val"]}</div>'
+
                 html_content += f"""
                 <a href="{link}" target="_blank" class="card">
                     <div class="card-header-flex">
@@ -373,9 +410,12 @@ def generate_html(data):
                     </div>
                     <div class="card-value-container">
                         <div class="card-value" style="{val_color}">{item['display_val']}</div>
-                        <div class="card-date">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                            {item['date']}
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div class="card-date">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                {item['date']}
+                            </div>
+                            {baseline_html}
                         </div>
                     </div>
                     <div class="chart-container">
@@ -401,8 +441,10 @@ def generate_html(data):
                 if (!ctx) return;
                 
                 const data = conf.data;
+                const baselineData = conf.baseline || [];
                 const labels = data.map(d => d.x);
                 const values = data.map(d => d.y);
+                const baselineValues = baselineData.map(d => d.y);
                 
                 let lineColor = '#58a6ff';
                 let gradientStart = 'rgba(88, 166, 255, 0.2)';
@@ -422,16 +464,33 @@ def generate_html(data):
                     type: 'line',
                     data: {
                         labels: labels,
-                        datasets: [{
-                            data: values,
-                            borderColor: lineColor,
-                            backgroundColor: gradient,
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            pointHoverRadius: 4,
-                            fill: true,
-                            tension: 0.4
-                        }]
+                        datasets: [
+                            {
+                                data: baselineValues,
+                                borderColor: 'rgba(139, 148, 158, 0.5)',
+                                borderWidth: 1.5,
+                                borderDash: [5, 5],
+                                pointRadius: 0,
+                                pointHoverRadius: 0,
+                                fill: false,
+                                tension: 0,
+                                tooltip: {
+                                    callbacks: {
+                                        label: function() { return null; }
+                                    }
+                                }
+                            },
+                            {
+                                data: values,
+                                borderColor: lineColor,
+                                backgroundColor: gradient,
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                pointHoverRadius: 4,
+                                fill: true,
+                                tension: 0.4
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
