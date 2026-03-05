@@ -396,7 +396,7 @@ def generate_html(data):
                 baseline_html = ""
                 if item.get('baseline_display_val'):
                     is_zero = item['baseline_display_val'].startswith("0.00") or item['baseline_display_val'] == "0.00%"
-                    baseline_label = "0 軸" if is_zero else "18 均"
+                    baseline_label = "0 軸" if is_zero else "18月平均"
                     baseline_html = f'<div class="baseline-badge" style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"><line x1="2" y1="12" x2="22" y2="12"></line></svg>{baseline_label} {item["baseline_display_val"]}</div>'
 
                 html_content += f"""
