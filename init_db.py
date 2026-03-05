@@ -41,17 +41,23 @@ def initialize_database():
             
         freq = item['freq']
         
-        # Calculate ~18 months equivalent points
-        if freq == "Daily":
-            init_limit = 18 * 22 # ~396 trading days
-        elif freq == "Weekly":
-            init_limit = 18 * 4 # ~72 weeks
-        elif freq == "Quarterly":
-            init_limit = 6 # 6 quarters = 18 months
+        # Base time param: how many months of history to initialize
+        period = 18
+        
+        # Calculate equivalent points based on the indicator's true update interval.
+        # Since 'freq' might be 'Priority' or 'Recession', we check 'points' (which 
+        # represents 1 period's worth of data in config.py) to deduce the true frequency.
+        pts = item.get('points', 12)
+        if pts >= 30: # Daily (~22 trading days per month)
+            init_limit = int(period * 22)
+        elif pts == 14: # Weekly (~4.3 weeks per month)
+            init_limit = int(period * 4.345)
+        elif pts == 4: # Quarterly (1 quarter every 3 months)
+            init_limit = int(period / 3.0)
         else:
-            # Monthly, Priority, Recession, Recovery
-            init_limit = 18
-            
+            # Monthly, Priority, Recession, Recovery defaults to 1 point per month
+            init_limit = period
+        
         print(f"Initializing 18-month history for {series_id} (Limit: {init_limit})...")
         observations = fetch_historical_observations(series_id, item['units'], init_limit)
         if not observations:
