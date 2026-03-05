@@ -79,15 +79,46 @@ def get_data_for_ui():
 
 
 def generate_html(data):
-    frequencies = ["Priority", "Recession", "Recovery", "Daily", "Weekly", "Monthly", "Quarterly"]
-    grouped = {f: {} for f in frequencies}
+    categories = [
+        "榮景期指標 (Priority)",
+        "衰退期指標 (Recession)",
+        "復甦期指標 (Recovery)",
+        "Labor Market",
+        "Rates & Spreads",
+        "Consumption & Sentiment",
+        "Production & Manufacturing",
+        "Monetary & Inflation",
+        "GDP Output",
+        "Investment & Gov",
+        "Credit Risk",
+        "Credit Delinquency",
+        "Trade"
+    ]
+    
+    cat_zh = {
+        "榮景期指標 (Priority)": "🌟 榮景期指標",
+        "衰退期指標 (Recession)": "📉 衰退期指標",
+        "復甦期指標 (Recovery)": "🌱 復甦期指標",
+        "Labor Market": "就業與勞動市場 (Labor Market)",
+        "Rates & Spreads": "殖利率與利差 (Rates & Spreads)",
+        "Consumption & Sentiment": "消費與信心 (Consumption & Sentiment)",
+        "Production & Manufacturing": "生產與庫存製造 (Production & Manufacturing)",
+        "Monetary & Inflation": "貨幣與通膨 (Monetary & Inflation)",
+        "GDP Output": "國內生產毛額 (GDP Output)",
+        "Investment & Gov": "投資與政府支出 (Investment & Gov)",
+        "Credit Risk": "信用風險 (Credit Risk)",
+        "Credit Delinquency": "違約率 (Credit Delinquency)",
+        "Trade": "進出口貿易 (Trade)"
+    }
+    
+    grouped = {cat: {} for cat in categories}
     
     for item in data:
-        freq = item['freq']
         cat = item['category']
-        if cat not in grouped[freq]:
-            grouped[freq][cat] = []
-        grouped[freq][cat].append(item)
+        freq = item['freq']
+        if freq not in grouped[cat]:
+            grouped[cat][freq] = []
+        grouped[cat][freq].append(item)
 
     html_content = f"""
     <!DOCTYPE html>
@@ -299,19 +330,22 @@ def generate_html(data):
 
     charts_config_json = []
 
-    for freq in frequencies:
-        if not grouped[freq]: continue
+    for cat in categories:
+        if not grouped[cat]: continue
         
-        has_items = any(len(cats) > 0 for cats in grouped[freq].values())
+        has_items = any(len(freqs) > 0 for freqs in grouped[cat].values())
         if not has_items: continue
         
-        freq_zh = {"Priority": "🌟 榮景期指標", "Recession": "📉 衰退期指標", "Recovery": "🌱 復甦期指標", "Daily": "日更新", "Weekly": "週更新", "Monthly": "月更新", "Quarterly": "季更新"}.get(freq, freq)
-        html_content += f'<div class="frequency-section"><h2 class="frequency-title">{freq_zh} ({freq})</h2>'
+        html_content += f'<div class="frequency-section"><h2 class="frequency-title">{cat_zh[cat]}</h2>'
         
-        for cat, items in grouped[freq].items():
+        for freq, items in grouped[cat].items():
             if not items: continue
             
-            html_content += f'<h3 class="category-title">{cat}</h3><div class="grid">'
+            # Hide the subgroup title if it's the top priority lists
+            if cat in ["榮景期指標 (Priority)", "衰退期指標 (Recession)", "復甦期指標 (Recovery)"]:
+                html_content += f'<div class="grid">'
+            else:
+                html_content += f'<h3 class="category-title">{freq}</h3><div class="grid">'
             
             for item in items:
                 link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] != 'SOFR_IORB_SPREAD' else '#'
@@ -453,15 +487,29 @@ def generate_ai_html(data):
     Generates a simplified, text/semantic-heavy HTML for LLM consumption.
     Ignores styling, JavaScript, or charts completely.
     """
-    frequencies = ["Priority", "Recession", "Recovery", "Daily", "Weekly", "Monthly", "Quarterly"]
-    grouped = {f: {} for f in frequencies}
+    categories = [
+        "榮景期指標 (Priority)",
+        "衰退期指標 (Recession)",
+        "復甦期指標 (Recovery)",
+        "Labor Market",
+        "Rates & Spreads",
+        "Consumption & Sentiment",
+        "Production & Manufacturing",
+        "Monetary & Inflation",
+        "GDP Output",
+        "Investment & Gov",
+        "Credit Risk",
+        "Credit Delinquency",
+        "Trade"
+    ]
+    grouped = {cat: {} for cat in categories}
     
     for item in data:
-        freq = item['freq']
         cat = item['category']
-        if cat not in grouped[freq]:
-            grouped[freq][cat] = []
-        grouped[freq][cat].append(item)
+        freq = item['freq']
+        if freq not in grouped[cat]:
+            grouped[cat][freq] = []
+        grouped[cat][freq].append(item)
         
     html_content = f"""<!DOCTYPE html>
 <html>
@@ -487,11 +535,10 @@ def generate_ai_html(data):
   </thead>
   <tbody>
 """
-    for freq in frequencies:
-        if not grouped[freq]: continue
-        freq_zh = {"Priority": "🌟 榮景期指標", "Recession": "📉 衰退期指標", "Recovery": "🌱 復甦期指標", "Daily": "日更新", "Weekly": "週更新", "Monthly": "月更新", "Quarterly": "季更新"}.get(freq, freq)
+    for cat in categories:
+        if not grouped[cat]: continue
         
-        for cat, items in grouped[freq].items():
+        for freq, items in grouped[cat].items():
             if not items: continue
             
             for item in items:
@@ -499,7 +546,7 @@ def generate_ai_html(data):
                 html_content += f"    <tr>\n"
                 html_content += f"      <td><a href=\"{link}\">{item['name']}</a></td>\n"
                 html_content += f"      <td>{item['display_val']} (Released: {item['date']})</td>\n"
-                html_content += f"      <td>{freq_zh}</td>\n"
+                html_content += f"      <td>{cat}</td>\n"
                 html_content += f"    </tr>\n"
 
     html_content += """
