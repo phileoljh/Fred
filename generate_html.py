@@ -60,11 +60,11 @@ def get_data_for_ui():
                 y_vals = [h['y'] for h in history]
                 min_y, max_y = min(y_vals), max(y_vals)
                 
-                # Force 0.0 baseline if the metric crosses zero, OR if it's a spread/percentage 
-                # that logically fluctuates around a zero-growth/zero-yield mark.
-                is_spread_or_growth = ("利差" in item['name'] or "Spread" in item['name'] or "年增率" in item['name'])
+                # Only apply the forced 0.0 baseline to the three specific yield spread indicators 
+                # requested by the user. Everything else falls back to the 18-month moving average.
+                zero_axis_indicators = ["SOFR_IORB_SPREAD", "T10Y2Y", "T10Y3M"]
                 
-                if (min_y < 0 and max_y > 0) or is_spread_or_growth:
+                if item['id'] in zero_axis_indicators:
                     baseline_val = 0.0
                 else:
                     baseline_val = sum(y_vals) / len(y_vals)
