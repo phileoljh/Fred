@@ -23,7 +23,7 @@ def get_data_for_ui():
     all_indicators = INDICATORS.copy()
     all_indicators.insert(3, spread_info) # Insert after SOFR
     
-    for item in all_indicators:
+    for idx, item in enumerate(all_indicators):
         try:
             # Query exactly 18 months of history from database context
             c.execute("SELECT value, date FROM observations WHERE series_id=? AND date >= date('now', '-18 months') ORDER BY date DESC", (item['id'],))
@@ -90,10 +90,25 @@ def get_data_for_ui():
         full_name = item['name']
         name_zh = full_name
         name_en = ""
+        
+        # Determine frequency for label display
+        freq_label = item['freq'].lower()
+        if freq_label in ["priority", "recession", "recovery"]:
+            # Deduce frequency based on points or id
+            if item['points'] == 30:
+                freq_label = "daily"
+            elif item['points'] == 14:
+                freq_label = "weekly"
+            elif item['points'] == 12:
+                freq_label = "monthly"
+            elif item['points'] == 4:
+                freq_label = "quarterly"
+
         if " (" in full_name and full_name.endswith(")"):
             parts = full_name.split(" (")
             name_zh = parts[0]
             name_en = parts[1].replace(")", "")
+            name_en = f"{name_en} ({freq_label})"
             
         ui_data.append({
             **item, 
@@ -105,7 +120,7 @@ def get_data_for_ui():
             'history': history,
             'history_baseline': history_baseline,
             'baseline_display_val': baseline_display,
-            'chart_id': f"chart_{item['freq']}_{item['id'].replace('-', '_')}"
+            'chart_id': f"chart_{idx}_{item['id'].replace('-', '_')}"
         })
         
     conn.close()
@@ -145,14 +160,11 @@ def generate_html(data):
         "Trade": "進出口貿易 (Trade)"
     }
     
-    grouped = {cat: {} for cat in categories}
+    grouped = {cat: [] for cat in categories}
     
     for item in data:
         cat = item['category']
-        freq = item['freq']
-        if freq not in grouped[cat]:
-            grouped[cat][freq] = []
-        grouped[cat][freq].append(item)
+        grouped[cat].append(item)
 
     html_content = f"""
     <!DOCTYPE html>
@@ -365,70 +377,59 @@ def generate_html(data):
     charts_config_json = []
 
     for cat in categories:
-        if not grouped[cat]: continue
-        
-        has_items = any(len(freqs) > 0 for freqs in grouped[cat].values())
-        if not has_items: continue
+        items = grouped[cat]
+        if not items: continue
         
         html_content += f'<div class="frequency-section"><h2 class="frequency-title">{cat_zh[cat]}</h2>'
+        html_content += f'<div class="grid">'
         
-        for freq, items in grouped[cat].items():
-            if not items: continue
+        for item in items:
+            link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] != 'SOFR_IORB_SPREAD' else '#'
             
-            # Hide the subgroup title if it's the top priority lists
-            if cat in ["榮景期指標 (Priority)", "衰退期指標 (Recession)", "復甦期指標 (Recovery)"]:
-                html_content += f'<div class="grid">'
-            else:
-                html_content += f'<h3 class="category-title">{freq}</h3><div class="grid">'
+            val_color = ""
+            if item.get('raw_val') is not None:
+                if item['id'] == 'SAHMREALTIME' and item['raw_val'] >= 0.5:
+                    val_color = "color: var(--negative);"
             
-            for item in items:
-                link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] != 'SOFR_IORB_SPREAD' else '#'
-                
-                val_color = ""
-                if item.get('raw_val') is not None:
-                    if item['id'] == 'SAHMREALTIME' and item['raw_val'] >= 0.5:
-                        val_color = "color: var(--negative);"
-                
-                if item['history']:
-                    charts_config_json.append({
-                        "id": item['chart_id'],
-                        "data": item['history'],
-                        "baseline": item['history_baseline'],
-                        "is_negative": (item['id'] == 'SAHMREALTIME' and item['raw_val'] >= 0.5)
-                    })
-                
-                baseline_html = ""
-                if item.get('baseline_display_val'):
-                    is_zero = item['baseline_display_val'].startswith("0.00") or item['baseline_display_val'] == "0.00%"
-                    baseline_label = "0 軸" if is_zero else "18月平均"
-                    baseline_html = f'<div class="baseline-badge" style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"><line x1="2" y1="12" x2="22" y2="12"></line></svg>{baseline_label} {item["baseline_display_val"]}</div>'
+            if item['history']:
+                charts_config_json.append({
+                    "id": item['chart_id'],
+                    "data": item['history'],
+                    "baseline": item['history_baseline'],
+                    "is_negative": (item['id'] == 'SAHMREALTIME' and item['raw_val'] >= 0.5)
+                })
+            
+            baseline_html = ""
+            if item.get('baseline_display_val'):
+                is_zero = item['baseline_display_val'].startswith("0.00") or item['baseline_display_val'] == "0.00%"
+                baseline_label = "0 軸" if is_zero else "18月平均"
+                baseline_html = f'<div class="baseline-badge" style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"><line x1="2" y1="12" x2="22" y2="12"></line></svg>{baseline_label} {item["baseline_display_val"]}</div>'
 
-                html_content += f"""
-                <a href="{link}" target="_blank" class="card">
-                    <div class="card-header-flex">
-                        <div class="card-title-container">
-                            <div class="card-title-zh">{item['name_zh']}</div>
-                            <div class="card-title-en">{item['name_en']}</div>
+            html_content += f"""
+            <a href="{link}" target="_blank" class="card">
+                <div class="card-header-flex">
+                    <div class="card-title-container">
+                        <div class="card-title-zh">{item['name_zh']}</div>
+                        <div class="card-title-en">{item['name_en']}</div>
+                    </div>
+                    <div class="badge">{item['id']}</div>
+                </div>
+                <div class="card-value-container">
+                    <div class="card-value" style="{val_color}">{item['display_val']}</div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div class="card-date">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            {item['date']}
                         </div>
-                        <div class="badge">{item['id']}</div>
+                        {baseline_html}
                     </div>
-                    <div class="card-value-container">
-                        <div class="card-value" style="{val_color}">{item['display_val']}</div>
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <div class="card-date">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                                {item['date']}
-                            </div>
-                            {baseline_html}
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="{item['chart_id']}"></canvas>
-                    </div>
-                </a>
-                """
-            html_content += '</div>'
-        html_content += '</div>'
+                </div>
+                <div class="chart-container">
+                    <canvas id="{item['chart_id']}"></canvas>
+                </div>
+            </a>
+            """
+        html_content += '</div></div>'
 
     html_content += """
         </div>
@@ -565,14 +566,11 @@ def generate_ai_html(data):
         "Credit Delinquency",
         "Trade"
     ]
-    grouped = {cat: {} for cat in categories}
+    grouped = {cat: [] for cat in categories}
     
     for item in data:
         cat = item['category']
-        freq = item['freq']
-        if freq not in grouped[cat]:
-            grouped[cat][freq] = []
-        grouped[cat][freq].append(item)
+        grouped[cat].append(item)
         
     html_content = f"""<!DOCTYPE html>
 <html>
@@ -599,18 +597,16 @@ def generate_ai_html(data):
   <tbody>
 """
     for cat in categories:
-        if not grouped[cat]: continue
+        items = grouped[cat]
+        if not items: continue
         
-        for freq, items in grouped[cat].items():
-            if not items: continue
-            
-            for item in items:
-                link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] != 'SOFR_IORB_SPREAD' else '#'
-                html_content += f"    <tr>\n"
-                html_content += f"      <td><a href=\"{link}\">{item['name']}</a></td>\n"
-                html_content += f"      <td>{item['display_val']} (Released: {item['date']})</td>\n"
-                html_content += f"      <td>{cat}</td>\n"
-                html_content += f"    </tr>\n"
+        for item in items:
+            link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] != 'SOFR_IORB_SPREAD' else '#'
+            html_content += f"    <tr>\n"
+            html_content += f"      <td><a href=\"{link}\">{item['name']}</a></td>\n"
+            html_content += f"      <td>{item['display_val']} (Released: {item['date']})</td>\n"
+            html_content += f"      <td>{cat}</td>\n"
+            html_content += f"    </tr>\n"
 
     html_content += """
   </tbody>
