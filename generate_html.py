@@ -139,9 +139,8 @@ def generate_html(data):
         "Consumption & Sentiment",
         "Production & Manufacturing",
         "Monetary & Inflation",
-        "GDP Output",
         "Investment & Gov",
-        "Trade"
+        "GDP Output"
     ]
     
     cat_zh = {
@@ -153,11 +152,10 @@ def generate_html(data):
         "Consumption & Sentiment": "消費與信心 (Consumption & Sentiment)",
         "Production & Manufacturing": "生產與庫存製造 (Production & Manufacturing)",
         "Monetary & Inflation": "貨幣與通膨 (Monetary & Inflation)",
-        "GDP Output": "國內生產毛額 (GDP Output)",
         "Investment & Gov": "投資與政府支出 (Investment & Gov)",
         "Credit Risk": "信用風險 (Credit Risk)",
         "Credit Delinquency": "違約率 (Credit Delinquency)",
-        "Trade": "進出口貿易 (Trade)"
+        "GDP Output": "國內生產毛額與貿易 (GDP Output & Trade)"
     }
     
     grouped = {cat: [] for cat in categories}
@@ -560,11 +558,10 @@ def generate_ai_html(data):
         "Consumption & Sentiment",
         "Production & Manufacturing",
         "Monetary & Inflation",
-        "GDP Output",
-        "Investment & Gov",
         "Credit Risk",
         "Credit Delinquency",
-        "Trade"
+        "Investment & Gov",
+        "GDP Output"
     ]
     grouped = {cat: [] for cat in categories}
     
