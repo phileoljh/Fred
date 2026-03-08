@@ -49,6 +49,8 @@ def get_data_for_ui():
                     display_val = item['format'].format(value=f"{val_float / 1000:.1f}")
                 elif item['id'] == 'JTSJOL':
                     display_val = item['format'].format(value=f"{val_float / 1000:.2f}")
+                elif item['id'] == 'EXHOSLUSM495S':
+                    display_val = item['format'].format(value=f"{val_float / 1000000:.2f}")
                 else:
                     display_val = item['format'].format(value=f"{val_float:.2f}")
             except ValueError:
@@ -90,6 +92,8 @@ def get_data_for_ui():
                         baseline_display = f"{baseline_val / 1000:.1f}"
                     elif item['id'] == 'JTSJOL':
                         baseline_display = f"{baseline_val / 1000:.2f}"
+                    elif item['id'] == 'EXHOSLUSM495S':
+                        baseline_display = f"{baseline_val / 1000000:.2f}"
                     else:
                         baseline_display = f"{baseline_val:.2f}"
                 baseline_display = item['format'].format(value=baseline_display)
