@@ -41,6 +41,7 @@ INDICATORS = [
     {"id": "SOFR", "name": "擔保隔夜融資利率 (SOFR)", "freq": "Daily", "category": "Rates & Spreads", "units": "lin", "format": "{value}%", "points": 30},
     {"id": "BAMLH0A0HYM2", "name": "美國高收益債券利差 (US High Yield OAS)", "freq": "Daily", "category": "Credit Risk", "units": "lin", "format": "{value}%", "points": 30},
     {"id": "BAMLH0A3HYC", "name": "CCC級及以下高收益債券利差 (CCC High Yield OAS)", "freq": "Daily", "category": "Credit Risk", "units": "lin", "format": "{value}%", "points": 30},
+    {"id": "T10YIE", "name": "10年期平準通膨率 (10-Year Breakeven Inflation Rate)", "freq": "Daily", "category": "Monetary & Inflation", "units": "lin", "format": "{value}%", "points": 30},
     
     # Weekly (3 Months = ~13-14 points)
     {"id": "ICSA", "name": "初領失業金人數 (Initial Claims)", "freq": "Weekly", "category": "Labor Market", "units": "lin", "format": "{value}", "points": 14},
@@ -60,7 +61,13 @@ INDICATORS = [
     {"id": "FEDFUNDS", "name": "聯邦基金有效利率 (Federal Funds Rate)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "lin", "format": "{value}%", "points": 12},
     {"id": "CPIAUCSL", "name": "消費者物價指數 (CPI)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pc1", "format": "{value}% YoY", "points": 12},
     {"id": "PCEPILFE", "name": "核心個人消費支出物價指數 (Core PCE Price Index)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pc1", "format": "{value}% YoY", "points": 12},
+    {"id": "PPIACO", "name": "生產者物價指數 (PPI)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pc1", "format": "{value}% YoY", "points": 12},
     {"id": "JTSJOL", "name": "JOLTS 職缺數 (Job Openings)", "freq": "Monthly", "category": "Labor Market", "units": "lin", "format": "{value}K", "points": 12},
+    {"id": "CIVPART", "name": "勞動參與率 (Labor Force Participation Rate)", "freq": "Monthly", "category": "Labor Market", "units": "lin", "format": "{value}%", "points": 12},
+    {"id": "CES0500000003", "name": "平均每小時薪資 (Average Hourly Earnings)", "freq": "Monthly", "category": "Labor Market", "units": "pc1", "format": "{value}% YoY", "points": 12},
+    {"id": "HOUST", "name": "新屋開工 (Housing Starts)", "freq": "Monthly", "category": "Investment & Gov", "units": "lin", "format": "{value}K", "points": 12},
+    {"id": "PERMIT", "name": "營建許可 (Building Permits)", "freq": "Monthly", "category": "Investment & Gov", "units": "lin", "format": "{value}K", "points": 12},
+    {"id": "EXHOSLUSM495S", "name": "成屋銷售 (Existing Home Sales)", "freq": "Monthly", "category": "Investment & Gov", "units": "lin", "format": "{value}M", "points": 12},
     
     # Quarterly (1 Year = 4 points)
     {"id": "GDPC1", "name": "實質國內生產毛額 (Real GDP)", "freq": "Quarterly", "category": "GDP Output", "units": "pc1", "format": "{value}% YoY", "points": 4},
@@ -69,5 +76,38 @@ INDICATORS = [
     {"id": "SLCEC1", "name": "州和地方政府消費支出 (State & Local Gov Consumption)", "freq": "Quarterly", "category": "Investment & Gov", "units": "pc1", "format": "{value}% YoY", "points": 4},
     {"id": "DRBLACBS", "name": "商業貸款違約率 (Delinquency Rate: Business Loans)", "freq": "Quarterly", "category": "Credit Delinquency", "units": "lin", "format": "{value}%", "points": 4},
     {"id": "DRCCLACBS", "name": "信用卡違約率 (Delinquency Rate: Credit Card Loans)", "freq": "Quarterly", "category": "Credit Delinquency", "units": "lin", "format": "{value}%", "points": 4},
-    {"id": "IMPGS", "name": "進口金額年增率 (Imports)", "freq": "Quarterly", "category": "Trade", "units": "pc1", "format": "{value}% YoY", "points": 4},
 ]
+
+# ==========================================
+# INDICATOR EXPLANATIONS (Documentation)
+# ==========================================
+# < Daily >
+# T10Y2Y / T10Y3M: 10年期減2年/3個月期公債利差，被稱為殖利率曲線倒掛與否的關鍵指標，通常領先衰退1年左右。
+# IORB: 準備金餘額利率。影響銀行拆款的關鍵利率下限。
+# SOFR: 擔保隔夜融資利率。市場上真實的短期無風險借貸成本。
+# BAMLH0A0HYM2 / BAMLH0A3HYC: 高收益債與CCC級債利差，用來衡量市場恐慌情緒與企業違約風險的信用風險擴張。
+# T10YIE: 10年期平準通膨率，反映債券市場(TIPS)對未來十年平均通膨的市場預期。
+#
+# < Weekly >
+# ICSA: 初領失業救濟金人數。最即時反映就業市場榮枯的高頻數據。
+#
+# < Monthly >
+# PAYEMS / ADPMNUSNERSA: (大/小)非農就業人數，觀察就業市場新增動能的核心指標。
+# UEMPLT5: 短期失業人數，當經濟剛轉弱時，這數據會率先攀升。
+# SAHMREALTIME: 薩姆規則衰退指標，當失業率三個月移動平均比過去12個月低點高出 0.5% 時，通常代表經濟已進入衰退。
+# RSXFS / PCEC96 / PCEDGC96: 零售銷售與其實質/耐久財消費支出，由於美國是消費大國，反映民眾最真實的消費狀況。
+# UMCSENT: 密大消費者信心，先行反映消費者未來的消費意願與通膨預期。
+# INDPRO / NEWORDER / BUSINV: 涵蓋工業生產、核心資本財訂單(企業投資意願)與商業庫存的水位。
+# FEDFUNDS: 美國聯邦基金利率(聯準會基準利率)。
+# CPIAUCSL / PCEPILFE / PPIACO: 分別觀察消費者終端物價、聯準會最看重的核心PCE、以及生產端出廠物價的變化(PPI領先CPI)。
+# JTSJOL: 職缺數。勞動力市場的「需求面」，數字太高代表企業缺工、工資居高不下；太低代表企業停止招募。
+# CIVPART: 勞動參與率。就業市場結構健康的指標，影響失業率解讀。
+# CES0500000003: 平均每小時薪資年增率。觀察有無「薪資-物價螺旋上升」的關鍵指標，也是服務業通膨的重點。
+# HOUST / PERMIT: 新屋開工與營建許可。房市的先行指標，帶動後續的一連串住宅相關消費跟銀行貸款。
+# EXHOSLUSM495S: 成屋銷售。佔據房地產市場大宗交易，了解整體房價熱度與庫存去化速度。
+#
+# < Quarterly >
+# GDPC1: 實質GDP，代表國家整體生產力與經濟成長最終結果。
+# FPI / PRFI / SLCEC1: 分別代表固定私人投資、住宅投資與地方政府支出，為 GDP 組成的重要區塊。
+# DRBLACBS / DRCCLACBS: 信用卡與商業貸款違約發生率，延遲反映消費與企業的財務健康體質惡化程度。
+# IMPGS: 進口實質年增率。國內經濟過熱時進口需求通常強勁，衰退時萎靡。
