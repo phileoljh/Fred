@@ -45,6 +45,10 @@ def get_data_for_ui():
                 val_float = float(latest_val)
                 if item['id'] == 'ICSA':
                     display_val = f"{val_float / 1000:.1f}K"
+                elif item['id'] == 'ADPMNUSNERSA':
+                    display_val = item['format'].format(value=f"{val_float / 1000:.1f}")
+                elif item['id'] == 'JTSJOL':
+                    display_val = item['format'].format(value=f"{val_float / 1000:.2f}")
                 else:
                     display_val = item['format'].format(value=f"{val_float:.2f}")
             except ValueError:
@@ -82,6 +86,10 @@ def get_data_for_ui():
                 else:
                     if item['id'] == 'ICSA':
                         baseline_display = f"{baseline_val / 1000:.1f}K"
+                    elif item['id'] == 'ADPMNUSNERSA':
+                        baseline_display = f"{baseline_val / 1000:.1f}"
+                    elif item['id'] == 'JTSJOL':
+                        baseline_display = f"{baseline_val / 1000:.2f}"
                     else:
                         baseline_display = f"{baseline_val:.2f}"
                 baseline_display = item['format'].format(value=baseline_display)
@@ -394,7 +402,8 @@ def generate_html(data):
                     "id": item['chart_id'],
                     "data": item['history'],
                     "baseline": item['history_baseline'],
-                    "is_negative": (item['id'] == 'SAHMREALTIME' and item['raw_val'] >= 0.5)
+                    "is_negative": (item['id'] == 'SAHMREALTIME' and item['raw_val'] >= 0.5),
+                    "is_zero_baseline": (item['id'] in ["SOFR_IORB_SPREAD", "T10Y2Y", "T10Y3M"])
                 })
             
             baseline_html = ""
@@ -449,6 +458,15 @@ def generate_html(data):
                 const values = data.map(d => d.y);
                 const baselineValues = baselineData.map(d => d.y);
                 
+                let baseColor = 'rgba(139, 148, 158, 0.5)';
+                let baseDash = [5, 5];
+                let baseWidth = 1.5;
+                if (conf.is_zero_baseline) {
+                    baseColor = '#f85149';
+                    baseDash = [];
+                    baseWidth = 2;
+                }
+                
                 let lineColor = '#58a6ff';
                 let gradientStart = 'rgba(88, 166, 255, 0.2)';
                 let gradientEnd = 'rgba(88, 166, 255, 0)';
@@ -470,9 +488,9 @@ def generate_html(data):
                         datasets: [
                             {
                                 data: baselineValues,
-                                borderColor: 'rgba(139, 148, 158, 0.5)',
-                                borderWidth: 1.5,
-                                borderDash: [5, 5],
+                                borderColor: baseColor,
+                                borderWidth: baseWidth,
+                                borderDash: baseDash,
                                 pointRadius: 0,
                                 pointHoverRadius: 0,
                                 fill: false,
