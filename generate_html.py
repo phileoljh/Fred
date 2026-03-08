@@ -60,7 +60,17 @@ def get_data_for_ui():
             # Format history for chart (oldest to newest)
             for row in reversed(rows):
                 try:
-                    history.append({'x': row[1], 'y': float(row[0])})
+                    raw_y = float(row[0])
+                    if item['id'] == 'ICSA':
+                        raw_y /= 1000
+                    elif item['id'] == 'ADPMNUSNERSA':
+                        raw_y /= 1000
+                    elif item['id'] == 'JTSJOL':
+                        raw_y /= 1000
+                    elif item['id'] == 'EXHOSLUSM495S':
+                        raw_y /= 1000000
+                        
+                    history.append({'x': row[1], 'y': raw_y})
                 except:
                     pass
             
@@ -86,17 +96,16 @@ def get_data_for_ui():
                 if baseline_val == 0.0:
                     baseline_display = "0.00"
                 else:
-                    if item['id'] == 'ICSA':
-                        baseline_display = f"{baseline_val / 1000:.1f}K"
-                    elif item['id'] == 'ADPMNUSNERSA':
-                        baseline_display = f"{baseline_val / 1000:.1f}"
-                    elif item['id'] == 'JTSJOL':
-                        baseline_display = f"{baseline_val / 1000:.2f}"
-                    elif item['id'] == 'EXHOSLUSM495S':
-                        baseline_display = f"{baseline_val / 1000000:.2f}"
+                    if item['id'] == 'ICSA' or item['id'] == 'ADPMNUSNERSA':
+                        baseline_display = f"{baseline_val:.1f}"
                     else:
                         baseline_display = f"{baseline_val:.2f}"
-                baseline_display = item['format'].format(value=baseline_display)
+                
+                # ICSA is a special case as config doesn't add the suffix
+                if item['id'] == 'ICSA':
+                    baseline_display = f"{baseline_display}K"
+                else:
+                    baseline_display = item['format'].format(value=baseline_display)
         
         # Split English and Chinese for cleaner UI
         full_name = item['name']
