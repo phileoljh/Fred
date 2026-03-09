@@ -59,12 +59,31 @@ def update_data():
             
         fetched_ids.add(series_id)
             
+        # Query official FRED series last_updated
+        series_url = "https://api.stlouisfed.org/fred/series"
+        series_params = {
+            'series_id': series_id,
+            'api_key': FRED_API_KEY,
+            'file_type': 'json'
+        }
         updated_at = datetime.now().isoformat()
+        try:
+            r_info = requests.get(series_url, params=series_params)
+            if r_info.status_code == 200:
+                d_info = r_info.json()
+                if 'seriess' in d_info and len(d_info['seriess']) > 0:
+                    updated_at = d_info['seriess'][0].get('last_updated', updated_at)
+        except Exception as e:
+            print(f"Error fetching metadata for {series_id}: {e}")
         
         for val, date in observations:
-            if val != '.': # Ignore missing dots
-                c.execute('''INSERT OR REPLACE INTO observations (series_id, value, date, updated_at) 
-                             VALUES (?, ?, ?, ?)''', (item['id'], val, date, updated_at))
+            if val != '.':
+                c.execute('''INSERT INTO observations (series_id, value, date, updated_at) 
+                             VALUES (?, ?, ?, ?)
+                             ON CONFLICT(series_id, date) DO UPDATE SET 
+                             value=excluded.value
+                             WHERE observations.value != excluded.value''', 
+                             (item['id'], val, date, updated_at))
         conn.commit()
     
     # Calculate SOFR - IORB spread historically based on recent intersecting dates
@@ -81,8 +100,12 @@ def update_data():
                 s_val = float(sofr_data[date])
                 i_val = float(iorb_data[date])
                 spread = s_val - i_val
-                c.execute('''INSERT OR REPLACE INTO observations (series_id, value, date, updated_at) 
-                             VALUES (?, ?, ?, ?)''', ('SOFR_IORB_SPREAD', f"{spread:.4f}", date, updated_at))
+                c.execute('''INSERT INTO observations (series_id, value, date, updated_at) 
+                             VALUES (?, ?, ?, ?)
+                             ON CONFLICT(series_id, date) DO UPDATE SET 
+                             value=excluded.value
+                             WHERE observations.value != excluded.value''', 
+                             ('SOFR_IORB_SPREAD', f"{spread:.4f}", date, updated_at))
             except ValueError:
                 pass
     conn.commit()

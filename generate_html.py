@@ -26,7 +26,7 @@ def get_data_for_ui():
     for idx, item in enumerate(all_indicators):
         try:
             # Query exactly 18 months of history from database context
-            c.execute("SELECT value, date FROM observations WHERE series_id=? AND date >= date('now', '-18 months') ORDER BY date DESC", (item['id'],))
+            c.execute("SELECT value, date, updated_at FROM observations WHERE series_id=? AND date >= date('now', '-18 months') ORDER BY date DESC", (item['id'],))
             rows = c.fetchall()
         except sqlite3.OperationalError:
             rows = []
@@ -36,11 +36,12 @@ def get_data_for_ui():
         baseline_display = ""
         display_val = "N/A"
         date_val = "N/A"
+        latest_updated_at = None
         val_float = None
         
         if rows:
             # Most recent for the big card
-            latest_val, latest_date = rows[0]
+            latest_val, latest_date, latest_updated_at = rows[0]
             try:
                 val_float = float(latest_val)
                 if item['id'] == 'ICSA':
@@ -136,10 +137,23 @@ def get_data_for_ui():
             name_en = parts[1].replace(")", "")
             name_en = f"{name_en} ({freq_label})"
             
+        is_new_update = False
+        if latest_updated_at:
+            try:
+                updated_at_dt = datetime.fromisoformat(latest_updated_at)
+                # Remove timezone info if present to allow comparison with naive datetime.now()
+                if updated_at_dt.tzinfo is not None:
+                    updated_at_dt = updated_at_dt.replace(tzinfo=None)
+                if (datetime.now() - updated_at_dt).days <= 7 and freq_label not in ["daily", "weekly"]:
+                    is_new_update = True
+            except (ValueError, TypeError):
+                pass
+
         ui_data.append({
             **item, 
             'name_zh': name_zh,
             'name_en': name_en,
+            'is_new_update': is_new_update,
             'display_val': display_val, 
             'date': date_val, 
             'raw_val': val_float,
@@ -377,6 +391,26 @@ def generate_html(data):
                 white-space: nowrap;
                 margin-left: 10px;
             }}
+
+            .badge-new {{
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 6px;
+                font-size: 0.75rem;
+                background: linear-gradient(45deg, #f85149, #a371f7);
+                color: white;
+                font-weight: 700;
+                white-space: nowrap;
+                margin-left: 10px;
+                box-shadow: 0 0 10px rgba(248, 81, 73, 0.4);
+                animation: pulse 2s infinite;
+            }}
+            
+            @keyframes pulse {{
+                0% {{ box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.4); }}
+                70% {{ box-shadow: 0 0 0 6px rgba(248, 81, 73, 0); }}
+                100% {{ box-shadow: 0 0 0 0 rgba(248, 81, 73, 0); }}
+            }}
             
             .chart-container {{
                 flex: 1;
@@ -446,6 +480,7 @@ def generate_html(data):
                         <div class="card-date">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                             {item['date']}
+                            { '<span class="badge-new">NEW</span>' if item.get('is_new_update') else '' }
                         </div>
                         {baseline_html}
                     </div>

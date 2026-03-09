@@ -65,7 +65,23 @@ def initialize_database():
             
         fetched_ids.add(series_id)
             
+        # Query official FRED series last_updated to prevent all indicators from appearing NEW
+        series_url = "https://api.stlouisfed.org/fred/series"
+        series_params = {
+            'series_id': series_id,
+            'api_key': FRED_API_KEY,
+            'file_type': 'json'
+        }
         updated_at = datetime.now().isoformat()
+        try:
+            r_info = requests.get(series_url, params=series_params)
+            if r_info.status_code == 200:
+                d_info = r_info.json()
+                if 'seriess' in d_info and len(d_info['seriess']) > 0:
+                    updated_at = d_info['seriess'][0].get('last_updated', updated_at)
+        except Exception as e:
+            print(f"Error fetching metadata for {series_id}: {e}")
+
         for val, date in observations:
             if val != '.': # Ignore missing dots
                 c.execute('''INSERT OR REPLACE INTO observations (series_id, value, date, updated_at) 
