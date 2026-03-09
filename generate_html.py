@@ -140,10 +140,25 @@ def get_data_for_ui():
         is_new_update = False
         if latest_updated_at:
             try:
-                updated_at_dt = datetime.fromisoformat(latest_updated_at)
-                # Remove timezone info if present to allow comparison with naive datetime.now()
-                if updated_at_dt.tzinfo is not None:
-                    updated_at_dt = updated_at_dt.replace(tzinfo=None)
+                # Strip out any timezone info or fractional seconds to make it compatible with older Python fromisoformat
+                clean_updated = str(latest_updated_at)
+                if '+' in clean_updated:
+                    clean_updated = clean_updated.rsplit('+', 1)[0]
+                # Sometimes timezone is represented as "-06" at the end of the string
+                # ISO format ends with HH:MM:SS or HH:MM:SS.ffffff. If there's another "-" after the time, that's timezone
+                if clean_updated.count('-') > 2 and ' ' in clean_updated:
+                    time_part = clean_updated.split(' ')[1]
+                    if '-' in time_part:
+                        clean_updated = clean_updated.rsplit('-', 1)[0]
+                elif clean_updated.count('-') > 2 and 'T' in clean_updated:
+                    time_part = clean_updated.split('T')[1]
+                    if '-' in time_part:
+                        clean_updated = clean_updated.rsplit('-', 1)[0]
+                
+                if clean_updated.endswith('Z'):
+                    clean_updated = clean_updated[:-1]
+
+                updated_at_dt = datetime.fromisoformat(clean_updated.strip())
                 if (datetime.now() - updated_at_dt).days <= 7 and freq_label not in ["daily", "weekly"]:
                     is_new_update = True
             except (ValueError, TypeError):
