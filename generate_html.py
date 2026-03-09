@@ -75,14 +75,13 @@ def get_data_for_ui():
                         raw_y /= 1000000
                         
                     history.append({'x': row[1], 'y': raw_y})
-                except:
+                except Exception:
                     pass
             
             # Calculate baseline (0-axis or 18-mo avg)
             baseline_val = None
             if history:
                 y_vals = [h['y'] for h in history]
-                min_y, max_y = min(y_vals), max(y_vals)
                 
                 # Only apply the forced 0.0 baseline to the three specific yield spread indicators 
                 # requested by the user. Everything else falls back to the 18-month moving average.
@@ -403,10 +402,11 @@ def generate_html(data):
 
     for cat in categories:
         items = grouped[cat]
-        if not items: continue
+        if not items:
+            continue
         
         html_content += f'<div class="frequency-section"><h2 class="frequency-title">{cat_zh[cat]}</h2>'
-        html_content += f'<div class="grid">'
+        html_content += '<div class="grid">'
         
         for item in items:
             link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] != 'SOFR_IORB_SPREAD' else '#'
@@ -632,15 +632,16 @@ def generate_ai_html(data):
 """
     for cat in categories:
         items = grouped[cat]
-        if not items: continue
+        if not items:
+            continue
         
         for item in items:
             link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] != 'SOFR_IORB_SPREAD' else '#'
-            html_content += f"    <tr>\n"
+            html_content += "    <tr>\n"
             html_content += f"      <td><a href=\"{link}\">{item['name']}</a></td>\n"
             html_content += f"      <td>{item['display_val']} (Released: {item['date']})</td>\n"
             html_content += f"      <td>{cat}</td>\n"
-            html_content += f"    </tr>\n"
+            html_content += "    </tr>\n"
 
     html_content += """
   </tbody>
