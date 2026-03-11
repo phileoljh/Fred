@@ -138,6 +138,7 @@ def get_data_for_ui():
             name_en = f"{name_en} ({freq_label})"
             
         is_new_update = False
+        new_badge_html = ""
         if latest_updated_at:
             try:
                 # Strip out any timezone info or fractional seconds to make it compatible with older Python fromisoformat
@@ -159,8 +160,15 @@ def get_data_for_ui():
                     clean_updated = clean_updated[:-1]
 
                 updated_at_dt = datetime.fromisoformat(clean_updated.strip())
-                if (datetime.now() - updated_at_dt).days <= 7 and freq_label not in ["daily", "weekly"]:
+                days_diff = (datetime.now() - updated_at_dt).days
+                if days_diff <= 7 and freq_label not in ["daily", "weekly"]:
                     is_new_update = True
+                    if days_diff <= 1:
+                        new_badge_html = '<span class="badge-new-1d">NEW (1d)</span>'
+                    elif days_diff <= 3:
+                        new_badge_html = '<span class="badge-new-3d">NEW (3d)</span>'
+                    else:
+                        new_badge_html = '<span class="badge-new-7d">NEW</span>'
             except (ValueError, TypeError):
                 pass
 
@@ -169,6 +177,7 @@ def get_data_for_ui():
             'name_zh': name_zh,
             'name_en': name_en,
             'is_new_update': is_new_update,
+            'new_badge_html': new_badge_html,
             'display_val': display_val, 
             'date': date_val, 
             'raw_val': val_float,
@@ -407,7 +416,20 @@ def generate_html(data):
                 margin-left: 10px;
             }}
 
-            .badge-new {{
+            .badge-new-1d {{
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 6px;
+                font-size: 0.75rem;
+                background: linear-gradient(45deg, #ff4500, #ff8c00);
+                color: white;
+                font-weight: 800;
+                white-space: nowrap;
+                margin-left: 10px;
+                box-shadow: 0 0 12px rgba(255, 69, 0, 0.6);
+                animation: pulse-1d 1.2s infinite;
+            }}
+            .badge-new-3d {{
                 display: inline-block;
                 padding: 2px 8px;
                 border-radius: 6px;
@@ -418,13 +440,33 @@ def generate_html(data):
                 white-space: nowrap;
                 margin-left: 10px;
                 box-shadow: 0 0 10px rgba(248, 81, 73, 0.4);
-                animation: pulse 2s infinite;
+                animation: pulse-3d 2s infinite;
+            }}
+            .badge-new-7d {{
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 6px;
+                font-size: 0.75rem;
+                background: linear-gradient(45deg, #1f6feb, #388bfd);
+                color: white;
+                font-weight: 700;
+                white-space: nowrap;
+                margin-left: 10px;
+                box-shadow: 0 0 8px rgba(31, 111, 235, 0.3);
+                animation: pulse-7d 3s infinite;
             }}
             
-            @keyframes pulse {{
-                0% {{ box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.4); }}
-                70% {{ box-shadow: 0 0 0 6px rgba(248, 81, 73, 0); }}
-                100% {{ box-shadow: 0 0 0 0 rgba(248, 81, 73, 0); }}
+            @keyframes pulse-1d {{
+                0%, 100% {{ box-shadow: 0 0 16px rgba(255, 69, 0, 0.9); transform: scale(1); opacity: 1; }}
+                50% {{ box-shadow: 0 0 4px rgba(255, 69, 0, 0.3); transform: scale(0.97); opacity: 0.85; }}
+            }}
+            @keyframes pulse-3d {{
+                0%, 100% {{ box-shadow: 0 0 14px rgba(248, 81, 73, 0.7); opacity: 1; }}
+                50% {{ box-shadow: 0 0 4px rgba(248, 81, 73, 0.2); opacity: 0.85; }}
+            }}
+            @keyframes pulse-7d {{
+                0%, 100% {{ box-shadow: 0 0 12px rgba(31, 111, 235, 0.6); opacity: 1; }}
+                50% {{ box-shadow: 0 0 2px rgba(31, 111, 235, 0.1); opacity: 0.85; }}
             }}
             
             .chart-container {{
@@ -495,7 +537,7 @@ def generate_html(data):
                         <div class="card-date">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                             {item['date']}
-                            { '<span class="badge-new">NEW</span>' if item.get('is_new_update') else '' }
+                            { item.get('new_badge_html', '') }
                         </div>
                         {baseline_html}
                     </div>
