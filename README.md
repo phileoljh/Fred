@@ -2,6 +2,9 @@
 
 這是一個自動化抓取美國聯準會 (FRED) 開放經濟指標，並產生**「視覺化互動式網頁」**與**「AI 專用精簡版網頁」**的輕量級 Python 專案。
 
+👉 **🌐 線上展示 (Live Demo)：**
+- 📊 視覺化儀表板：[https://fred.hihimonitor.win/](https://fred.hihimonitor.win/)
+- 🤖 AI 餵食專用版：[https://fred.hihimonitor.win/ai_view.html](https://fred.hihimonitor.win/ai_view.html)
 ## 🌟 專案特色
 
 - **自動化新數據標示 (NEW Badge)**：精準抓取官方發布時間 (`last_updated`)，當數值為 7 天內最新公布時，圖表會自動亮起專屬發光徽章。
