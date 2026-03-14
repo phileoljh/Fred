@@ -43,6 +43,7 @@ INDICATORS = [
     {"id": "BAMLH0A3HYC", "name": "CCC級及以下高收益債券利差 (CCC High Yield OAS)", "freq": "Daily", "category": "Credit Risk", "units": "lin", "format": "{value}%", "points": 30},
     {"id": "T10YIE", "name": "10年期平準通膨率 (10-Year Breakeven Inflation Rate)", "freq": "Daily", "category": "Monetary & Inflation", "units": "lin", "format": "{value}%", "points": 30},
     {"id": "VIXCLS", "name": "VIX恐慌指數 (CBOE Volatility Index)", "freq": "Daily", "category": "Consumption & Sentiment", "units": "lin", "format": "{value} pts", "points": 30},
+    {"id": "BAMLC0A4CBBB", "name": "美國 BBB 級企業債選擇權調整利差 (US BBB Corporate OAS)", "freq": "Daily", "category": "Credit Risk", "units": "lin", "format": "{value}%", "points": 30},
     
     # Weekly (3 Months = ~13-14 points)
     {"id": "ICSA", "name": "初領失業金人數 (Initial Claims)", "freq": "Weekly", "category": "Labor Market", "units": "lin", "format": "{value}", "points": 14},
@@ -87,7 +88,7 @@ INDICATORS = [
 # T10Y2Y / T10Y3M: 10年期減2年/3個月期公債利差，被稱為殖利率曲線倒掛與否的關鍵指標，通常領先衰退1年左右。
 # IORB: 準備金餘額利率。影響銀行拆款的關鍵利率下限。
 # SOFR: 擔保隔夜融資利率。市場上真實的短期無風險借貸成本。
-# BAMLH0A0HYM2 / BAMLH0A3HYC: 高收益債與CCC級債利差，用來衡量市場恐慌情緒與企業違約風險的信用風險擴張。
+# BAMLH0A0HYM2 / BAMLH0A3HYC / BAMLC0A4CBBB: 高收益債與各級企業債利差，衡量市場恐慌與企業違約風險的信用擴張程度，BBB級為觀察「墮落天使」的重要切入點。
 # T10YIE: 10年期平準通膨率，反映債券市場(TIPS)對未來十年平均通膨的市場預期。
 # VIXCLS: 恐慌指數，反映市場對未來 30 天 S&P 500 波動率的預期。
 #
