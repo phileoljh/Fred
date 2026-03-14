@@ -62,22 +62,79 @@ python generate_html.py
 - 開啟 `index.html` 用瀏覽器觀看漂亮的視覺化圖表。
 - 開啟 `ai_view.html` 給 AI 分析使用。
 
-## ⏱️ 自動化排程建議 (Linux Cron)
+## ⏱️ 自動化部署與排程 (Cloudflare Pages + GitHub Actions)
 
-為了讓您的儀表板永遠保持最新狀態，建議您將這個專案部署在 Linux 伺服器上，並設定 Cron 排程。FRED 的免費額度為每分鐘 120 次，本程式預設只需呼叫 25 次，負載極低。
+**文件目的：** 規範 `phileoljh/Fred` 專案於 Cloudflare Pages (靜態網站代管服務) 的部署流程，並整合 GitHub Actions (自動化工作流程工具) 實現每日自動更新。
 
-您可以建立一個簡單的 `run_fred.sh`：
-```bash
-#!/bin/bash
-cd /path/to/your/FRED
-python fetch_data.py
-python generate_html.py
+### 階段一：專案準備 (Repository Setup)
+1. 確保專案已 Fork (複製分支) 或 Push (推送) 至個人 GitHub 帳號下。
+2. 確認專案根目錄包含核心執行檔：`fetch_data.py`、`generate_html.py`、`init_db.py` 及 `requirements.txt`。
+
+### 階段二：Cloudflare Pages 部署 (Deployment)
+
+#### 1. 建立專案 (避開 Worker 陷阱)
+* **正確路徑：** 登入 Cloudflare -> 左側選單選擇 **Workers & Pages** -> 點擊右上角 **Create (建立)** -> **務必選擇「Pages (頁面)」頁籤** -> **Connect to Git (連接到 Git)**。
+* **⚠️ 常見錯誤 (Troubleshooting)：** 若畫面出現要求選擇「Worker (邊緣運算程式)」的樣板，或部署命令出現 `npx wrangler deploy`，代表選錯服務類型。必須退回上一層，點擊「Looking to deploy Pages? Get started」重新進入靜態網頁流程。
+
+#### 2. 組建設定 (Build Settings)
+請嚴格設定以下參數，確保每次部署都在乾淨的虛擬環境中重建資料庫與網頁：
+* **Framework preset (框架預設)：** `None`
+* **Build command (組建命令)：**
+  ```bash
+  pip install -r requirements.txt && python init_db.py && python generate_html.py && mkdir -p dist && mv *.html dist/
+  ```
+* **Build output directory (組建輸出目錄)：** `dist`
+  * **⚠️ 常見錯誤：** 結尾嚴禁加上斜線 (不可寫成 `dist/`)，否則系統會報錯。
+* **Root directory (根目錄)：** 保持空白。
+  * **⚠️ 常見錯誤：** 若填入 `dist`，系統會直接在空目錄執行組建命令，導致找不到 Python 腳本與 `requirements.txt` 而崩潰。
+
+#### 3. 環境變數設定 (Environment Variables)
+
+* `FRED_API_KEY`：填入官方申請的 API 金鑰。
+* `TZ`：填入 `Asia/Taipei`。
+  * **設定說明：** Linux 伺服器預設為 UTC (世界協調時間)。設定 TZ (Time Zone, 時區) 可強制 Python 的 `datetime.now()` 抓取台灣時間，解決網頁更新時間顯示異常的問題。
+* `PYTHON_VERSION`：(選擇性設定)
+  * **可不設定**：系統使用預設版本 (如 `3.13.3`)，部署速度最快。
+
+### 階段三：自訂網域綁定 (Custom Domain)
+
+為避免手動設定 DNS (Domain Name System, 網域名稱系統) 導致缺少 SSL (安全通訊協定) 憑證：
+
+1. 進入 Cloudflare Pages 專案面板 -> **Custom domains (自訂網域)**。
+2. 點擊 **Set up a custom domain**，輸入目標網域（例如：`fred.hihimonitor.win`）。
+3. 系統將自動配置 CNAME (標準名稱紀錄) 並簽發憑證，通常於 1 分鐘內生效。
+
+### 階段四：自動化排程 (Automation & CI/CD)
+
+#### 1. 取得部署觸發網址 (Deploy Hook)
+
+1. 進入 CF Pages 專案 -> **Settings (設定)** -> **Builds & deployments (組建與部署)**。
+2. 新增 Deploy Hook，命名為 `Daily-Update`，綁定 `main` 分支。
+3. 複製系統生成的 API 網址。
+
+#### 2. 設定 GitHub 機密變數 (Secrets)
+
+1. 進入 GitHub 專案 -> **Settings (設定)** -> **Secrets and variables** -> **Actions**。
+2. 新增 Repository secret，命名為 `CF_DEPLOY_HOOK`，貼上剛剛複製的網址。此舉為基礎安全防護，避免具有控制權的網址外洩。
+
+#### 3. 建立 GitHub Actions 工作流程 (Workflow)
+
+1. 在 GitHub 專案根目錄新增檔案：`.github/workflows/daily-update.yml`。
+2. 寫入以下配置 (設定為台灣時間每日早上 08:00 執行)：
+```yaml
+name: Daily FRED Update
+on:
+  schedule:
+    - cron: '0 0 * * *' # UTC 00:00 = 台灣時間 08:00
+  workflow_dispatch: # 允許手動點擊執行
+jobs:
+  trigger-cloudflare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Cloudflare Pages Build
+        run: curl -X POST "${{ secrets.CF_DEPLOY_HOOK }}"
 ```
-
-並在 `crontab -e` 加入每日自動更新排程（例如每天早上 8 點）：
-```text
-0 8 * * * /path/to/your/FRED/run_fred.sh >> /path/to/your/FRED/cron.log 2>&1
-```
+3. 儲存並 Commit (提交) 變更。至此，全自動化更新管線已建置完成。建議首次設定後，透過 GitHub 介面的 `Run workflow` 手動觸發一次以驗證連線。
 
 ## 📝 自訂指標
 
