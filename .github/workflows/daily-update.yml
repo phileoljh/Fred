@@ -1,0 +1,19 @@
+name: Daily FRED Update
+
+# 設定觸發條件
+on:
+  schedule:
+    # 使用 Cron 語法設定時間。
+    # 伺服器時間為 UTC (世界協調時間)，台灣時間 (GMT+8) 需減去 8 小時。
+    # 以下設定為每天 UTC 時間 00:30 執行，等於台灣時間每天早上 08:30。
+    - cron: '30 0 * * *'
+  # 允許手動觸發此工作流程，方便測試
+  workflow_dispatch:
+
+jobs:
+  trigger-cloudflare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Cloudflare Pages Build
+        # 使用 curl 發送 POST 請求給 Cloudflare，網址從機密變數中安全讀取
+        run: curl -X POST "${{ secrets.CF_DEPLOY_HOOK }}"
