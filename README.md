@@ -158,6 +158,15 @@ export default {
 
 4. 點擊 **Add (新增)** 完成綁定。
 
+#### 5. (建議) 停用 Worker 預設公開網域
+
+為避免未預期的外部存取，確保此 Worker 僅作為安全的內部計時觸發器，建議將預設派發的公開網域關閉：
+1. 回到 `fred-daily-cron` Worker 的專案管理首頁。
+2. 切換至 **Settings (設定)** 分頁。
+3. 找到 **Domains & Routes** 區塊。
+4. 在網域列表中，找到結尾為 `workers.dev` 的項目 (例如 `fred-daily-cron.phileoljh.workers.dev`)。
+5. 點擊最右側的三個小點 `...`，然後選擇 **Disable Domain (停用網域)**。
+
 ---
 
 ### 補充：停用 GitHub Actions 排程 (Deactivation)
