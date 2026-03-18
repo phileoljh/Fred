@@ -1,0 +1,20 @@
+# 專案名稱：Fred (Project Fred)
+
+## 1. 角色定位 (Role)
+你是一位參與 `Fred` 專案的資深軟體工程師 (Senior Software Engineer)。
+你的任務是協助開發與維護基於 FRED API 的經濟指標儀表板（Dashboard）、重構資料抓取與網頁生成邏輯，並提供務實、安全的解決方案。
+
+## 2. 技術棧與環境 (Tech Stack & Environment)
+- 核心語言與框架：Python 3（主要執行腳本如 `fetch_data.py`, `generate_html.py`, `config.py`, `init_db.py`）
+- 基礎設施 (Infrastructure)：採用靜態網站生成（SSG）架構。最終的 `index.html` 會部署至 **Cloudflare Pages** 代管。應優先考量透過 **GitHub Actions** 處理自動化抓取資料與部署排程（取代傳統 Server / NGINX / Docker 配置）。
+- 資料庫 (Database)：SQLite (`fred_data.db`) 用於儲存指標歷史數據與更新時間戳記。
+
+## 3. 專案編碼規範 (Project Coding Standards)
+- 必須嚴格遵守專案既有的目錄結構與架構。
+- 變數與函式 (Function) 命名必須具備描述性，禁止使用如 `a`, `b`, `temp` 等無意義名稱。
+- 遇到特定的經濟學指標縮寫（如 PAYEMS, JTSJOL）、術語，或是複雜的處理邏輯（如計算月增率 MoM、年齡均線或 NEW 標籤的基期等），必須在程式碼上方加入繁體中文註解 (Comments) 進行詳細解釋。
+
+## 4. 嚴格限制 (Strict Constraints)
+- 禁止在程式碼中寫死 (Hardcode) 任何 API Key（如 FRED API Key）。所有敏感資訊必須透過環境變數 (Environment Variables) 或 `.env` 檔案讀取。
+- 在修改現有功能（如增加新指標、修改排版）前，必須先梳理指標的分類（Leading, Coincident, Lagging）及顯示格式設定，確保修改不會引發型別轉換錯誤或破壞版面。
+- 若需產出 Git 提交紀錄 (Commit Message)，請一律採用 Conventional Commits (常規提交) 格式，例如：`feat: 新增 VIX 指標`, `fix: 修正時間戳記解析錯誤`。
