@@ -57,8 +57,8 @@ INDICATORS = [
     {"id": "PCEC96", "name": "實質個人消費支出 (Real PCE)", "freq": "Monthly", "category": "Consumption & Sentiment", "units": "pc1", "format": "{value}% YoY", "points": 12},
     {"id": "PCEDGC96", "name": "實質耐久財消費支出 (Real PCE: Durable Goods)", "freq": "Monthly", "category": "Consumption & Sentiment", "units": "pc1", "format": "{value}% YoY", "points": 12},
     {"id": "UMCSENT", "name": "密西根大學消費者信心指數 (U.S. Consumer Sentiment)", "freq": "Monthly", "category": "Consumption & Sentiment", "units": "lin", "format": "{value} pts", "points": 12},
-    {"id": "INDPRO", "name": "工業生產指數 (Industrial Production)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12},
     {"id": "NEWORDER", "name": "核心資本財訂單 (Nondefense Capital Goods Orders)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12},
+    {"id": "INDPRO", "name": "工業生產指數 (Industrial Production)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12},
     {"id": "BUSINV", "name": "商業庫存 (Business Inventories)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12},
     {"id": "FEDFUNDS", "name": "聯邦基金有效利率 (Federal Funds Rate)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "lin", "format": "{value}%", "points": 12},
     {"id": "CPIAUCSL", "name": "消費者物價指數 (CPI)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pch", "format": "{value}% MoM", "points": 12},
@@ -101,7 +101,7 @@ INDICATORS = [
 # SAHMREALTIME: 薩姆規則衰退指標，當失業率三個月移動平均比過去12個月低點高出 0.5% 時，通常代表經濟已進入衰退。
 # RSXFS / PCEC96 / PCEDGC96: 零售銷售與其實質/耐久財消費支出，由於美國是消費大國，反映民眾最真實的消費狀況。
 # UMCSENT: 密大消費者信心，先行反映消費者未來的消費意願與通膨預期。
-# INDPRO / NEWORDER / BUSINV: 涵蓋工業生產、核心資本財訂單(企業投資意願)與商業庫存的水位。
+# NEWORDER / INDPRO / BUSINV: 涵蓋生產流水線：下單(NEWORDER) -> 製造(INDPRO) -> 堆貨庫存(BUSINV)。
 # FEDFUNDS: 美國聯邦基金利率(聯準會基準利率)。
 # CPIAUCSL / PCEPILFE / PPIACO: 觀察美國消費者物價及聯準會最看重的核心PCE(月增率MoM)，與生產端出廠物價的變化。
 # JTSJOL: 職缺數。勞動力市場的「需求面」，以百萬(M)人計。
