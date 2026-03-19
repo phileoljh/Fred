@@ -12,12 +12,13 @@ def init_db():
     conn.commit()
     return conn
 
-def fetch_historical_observations(series_id, units, limit=540):
+def fetch_historical_observations(series_id, units, limit=540, session=None):
     if not FRED_API_KEY or FRED_API_KEY == 'your_fred_api_key_here':
         print(f"Skipping API fetch for {series_id}: No valid API key provided.")
         return []
     
-    url = f"https://api.stlouisfed.org/fred/series/observations"
+    requester = session or requests
+    url = "https://api.stlouisfed.org/fred/series/observations"
     params = {
         'series_id': series_id,
         'api_key': FRED_API_KEY,
@@ -27,7 +28,7 @@ def fetch_historical_observations(series_id, units, limit=540):
         'units': units
     }
     try:
-        response = requests.get(url, params=params)
+        response = requester.get(url, params=params)
         response.raise_for_status()
         data = response.json()
         if 'observations' in data:
@@ -41,33 +42,29 @@ def initialize_database():
     c = conn.cursor()
     fetched_ids = set()
     
-    for item in INDICATORS:
+    with requests.Session() as session:
+      for item in INDICATORS:
         series_id = item['id']
         if series_id in fetched_ids:
             print(f"Skipping duplicate init fetch for {series_id}...")
             continue
             
-        freq = item['freq']
-        
         # Base time param: how many months of history to initialize
         period = 18
         
-        # Calculate equivalent points based on the indicator's true update interval.
-        # Since 'freq' might be 'Priority' or 'Recession', we check 'points' (which 
-        # represents 1 period's worth of data in config.py) to deduce the true frequency.
-        pts = item.get('points', 12)
-        if pts >= 30: # Daily (~22 trading days per month)
-            init_limit = int(period * 22)
-        elif pts == 14: # Weekly (~4.3 weeks per month)
-            init_limit = int(period * 4.345)
-        elif pts == 4: # Quarterly (1 quarter every 3 months)
-            init_limit = int(period / 3.0)
-        else:
-            # Monthly, Priority, Recession, Recovery defaults to 1 point per month
+        # Calculate how many data points cover 18 months, based on the true publication frequency.
+        true_freq = item.get('true_freq', 'monthly')
+        if true_freq == 'daily':
+            init_limit = int(period * 22)    # ~22 trading days per month
+        elif true_freq == 'weekly':
+            init_limit = int(period * 4.345) # ~4.345 weeks per month
+        elif true_freq == 'quarterly':
+            init_limit = int(period / 3.0)   # 1 quarter every 3 months
+        else:                                # monthly (default)
             init_limit = period
         
         print(f"Initializing 18-month history for {series_id} (Limit: {init_limit})...")
-        observations = fetch_historical_observations(series_id, item['units'], init_limit)
+        observations = fetch_historical_observations(series_id, item['units'], init_limit, session=session)
         if not observations:
             continue
             
@@ -82,7 +79,7 @@ def initialize_database():
         }
         updated_at = datetime.now().isoformat()
         try:
-            r_info = requests.get(series_url, params=series_params)
+            r_info = session.get(series_url, params=series_params)
             if r_info.status_code == 200:
                 d_info = r_info.json()
                 if 'seriess' in d_info and len(d_info['seriess']) > 0:

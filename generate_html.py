@@ -77,20 +77,9 @@ def get_data_for_ui():
             latest_val, latest_date, latest_updated_at = rows[0]
             try:
                 val_float = float(latest_val)
-                if item['id'] == 'ICSA':
-                    display_val = f"{val_float / 1000:.1f}K"
-                elif item['id'] == 'ADPMNUSNERSA':
-                    display_val = item['format'].format(value=f"{val_float / 1000:.1f}")
-                elif item['id'] == 'JTSJOL':
-                    display_val = item['format'].format(value=f"{val_float / 1000:.2f}")
-                elif item['id'] == 'EXHOSLUSM495S':
-                    display_val = item['format'].format(value=f"{val_float / 1000000:.2f}")
-                elif item['id'] in ['HOUST', 'PERMIT']:
-                    display_val = item['format'].format(value=f"{val_float:.0f}")
-                elif item['id'] == 'PAYEMS':
-                    display_val = item['format'].format(value=f"{val_float:.1f}")
-                else:
-                    display_val = item['format'].format(value=f"{val_float:.2f}")
+                scale = item.get('scale', 1)
+                decimals = item.get('decimals', 2)
+                display_val = item['format'].format(value=f"{val_float / scale:.{decimals}f}")
             except ValueError:
                 display_val = latest_val
             date_val = latest_date
@@ -98,16 +87,7 @@ def get_data_for_ui():
             # Format history for chart (oldest to newest)
             for row in reversed(rows):
                 try:
-                    raw_y = float(row[0])
-                    if item['id'] == 'ICSA':
-                        raw_y /= 1000
-                    elif item['id'] == 'ADPMNUSNERSA':
-                        raw_y /= 1000
-                    elif item['id'] == 'JTSJOL':
-                        raw_y /= 1000
-                    elif item['id'] == 'EXHOSLUSM495S':
-                        raw_y /= 1000000
-                        
+                    raw_y = float(row[0]) / item.get('scale', 1)
                     history.append({'x': row[1], 'y': raw_y})
                 except Exception:
                     pass
@@ -130,21 +110,9 @@ def get_data_for_ui():
             
             baseline_display = ""
             if baseline_val is not None:
-                if baseline_val == 0.0:
-                    baseline_display = "0.00"
-                else:
-                    if item['id'] == 'ICSA' or item['id'] == 'ADPMNUSNERSA' or item['id'] == 'PAYEMS':
-                        baseline_display = f"{baseline_val:.1f}"
-                    elif item['id'] in ['HOUST', 'PERMIT']:
-                        baseline_display = f"{baseline_val:.0f}"
-                    else:
-                        baseline_display = f"{baseline_val:.2f}"
-                
-                # ICSA is a special case as config doesn't add the suffix
-                if item['id'] == 'ICSA':
-                    baseline_display = f"{baseline_display}K"
-                else:
-                    baseline_display = item['format'].format(value=baseline_display)
+                decimals = item.get('decimals', 2)
+                num_str = "0.00" if baseline_val == 0.0 else f"{baseline_val:.{decimals}f}"
+                baseline_display = item['format'].format(value=num_str)
         
         # Split English and Chinese for cleaner UI
         full_name = item['name']

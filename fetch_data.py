@@ -11,7 +11,8 @@ def update_data():
     
     fetched_ids = set()
     
-    for item in INDICATORS:
+    with requests.Session() as session:
+      for item in INDICATORS:
         series_id = item['id']
         if series_id in fetched_ids:
             print(f"Skipping duplicate fetch for {series_id}...")
@@ -21,7 +22,7 @@ def update_data():
         fetch_limit = item.get('points', 30)
         
         print(f"Fetching history for {series_id} (Limit: {fetch_limit})...")
-        observations = fetch_historical_observations(series_id, item['units'], fetch_limit)
+        observations = fetch_historical_observations(series_id, item['units'], fetch_limit, session=session)
         if not observations:
             continue
             
@@ -36,7 +37,7 @@ def update_data():
         }
         updated_at = datetime.now().isoformat()
         try:
-            r_info = requests.get(series_url, params=series_params)
+            r_info = session.get(series_url, params=series_params)
             if r_info.status_code == 200:
                 d_info = r_info.json()
                 if 'seriess' in d_info and len(d_info['seriess']) > 0:
