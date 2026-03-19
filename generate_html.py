@@ -5,6 +5,39 @@ import sys
 from datetime import datetime
 from config import DB_PATH, HTML_PATH, AI_HTML_PATH, INDICATORS
 
+# ==========================================
+# MODULE-LEVEL CONSTANTS (shared by all generators)
+# ==========================================
+CATEGORIES = [
+    "榮景期指標 (Priority)",
+    "衰退期指標 (Recession)",
+    "復甦期指標 (Recovery)",
+    "Labor Market",
+    "Rates & Spreads",
+    "Credit Risk",
+    "Credit Delinquency",
+    "Consumption & Sentiment",
+    "Production & Manufacturing",
+    "Monetary & Inflation",
+    "Investment & Gov",
+    "GDP Output"
+]
+
+CAT_ZH = {
+    "榮景期指標 (Priority)": "🌟 榮景期指標",
+    "衰退期指標 (Recession)": "📉 衰退期指標",
+    "復甦期指標 (Recovery)": "🌱 復甦期指標",
+    "Labor Market": "就業與勞動市場 (Labor Market)",
+    "Rates & Spreads": "殖利率與利差 (Rates & Spreads)",
+    "Consumption & Sentiment": "消費與信心 (Consumption & Sentiment)",
+    "Production & Manufacturing": "生產與庫存製造 (Production & Manufacturing)",
+    "Monetary & Inflation": "貨幣與通膨 (Monetary & Inflation)",
+    "Investment & Gov": "投資與政府支出 (Investment & Gov)",
+    "Credit Risk": "信用風險 (Credit Risk)",
+    "Credit Delinquency": "違約率 (Credit Delinquency)",
+    "GDP Output": "國內生產毛額與貿易 (GDP Output & Trade)"
+}
+
 def get_data_for_ui():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -192,41 +225,11 @@ def get_data_for_ui():
 
 
 def generate_html(data):
-    categories = [
-        "榮景期指標 (Priority)",
-        "衰退期指標 (Recession)",
-        "復甦期指標 (Recovery)",
-        "Labor Market",
-        "Rates & Spreads",
-        "Credit Risk",
-        "Credit Delinquency",
-        "Consumption & Sentiment",
-        "Production & Manufacturing",
-        "Monetary & Inflation",
-        "Investment & Gov",
-        "GDP Output"
-    ]
-    
-    cat_zh = {
-        "榮景期指標 (Priority)": "🌟 榮景期指標",
-        "衰退期指標 (Recession)": "📉 衰退期指標",
-        "復甦期指標 (Recovery)": "🌱 復甦期指標",
-        "Labor Market": "就業與勞動市場 (Labor Market)",
-        "Rates & Spreads": "殖利率與利差 (Rates & Spreads)",
-        "Consumption & Sentiment": "消費與信心 (Consumption & Sentiment)",
-        "Production & Manufacturing": "生產與庫存製造 (Production & Manufacturing)",
-        "Monetary & Inflation": "貨幣與通膨 (Monetary & Inflation)",
-        "Investment & Gov": "投資與政府支出 (Investment & Gov)",
-        "Credit Risk": "信用風險 (Credit Risk)",
-        "Credit Delinquency": "違約率 (Credit Delinquency)",
-        "GDP Output": "國內生產毛額與貿易 (GDP Output & Trade)"
-    }
-    
-    grouped = {cat: [] for cat in categories}
-    
+    grouped = {cat: [] for cat in CATEGORIES}
+
     for item in data:
         cat = item['category']
-        grouped[cat].append(item)
+        grouped.setdefault(cat, []).append(item)
 
     html_content = f"""
     <!DOCTYPE html>
@@ -491,12 +494,12 @@ def generate_html(data):
 
     charts_config_json = []
 
-    for cat in categories:
+    for cat in CATEGORIES:
         items = grouped[cat]
         if not items:
             continue
         
-        html_content += f'<div class="frequency-section"><h2 class="frequency-title">{cat_zh[cat]}</h2>'
+        html_content += f'<div class="frequency-section"><h2 class="frequency-title">{CAT_ZH.get(cat, cat)}</h2>'
         html_content += '<div class="grid">'
         
         for item in items:
@@ -678,25 +681,11 @@ def generate_ai_html(data):
     Generates a simplified, text/semantic-heavy HTML for LLM consumption.
     Ignores styling, JavaScript, or charts completely.
     """
-    categories = [
-        "榮景期指標 (Priority)",
-        "衰退期指標 (Recession)",
-        "復甦期指標 (Recovery)",
-        "Labor Market",
-        "Rates & Spreads",
-        "Consumption & Sentiment",
-        "Production & Manufacturing",
-        "Monetary & Inflation",
-        "Credit Risk",
-        "Credit Delinquency",
-        "Investment & Gov",
-        "GDP Output"
-    ]
-    grouped = {cat: [] for cat in categories}
-    
+    grouped = {cat: [] for cat in CATEGORIES}
+
     for item in data:
         cat = item['category']
-        grouped[cat].append(item)
+        grouped.setdefault(cat, []).append(item)
         
     html_content = f"""<!DOCTYPE html>
 <html>
@@ -722,7 +711,7 @@ def generate_ai_html(data):
   </thead>
   <tbody>
 """
-    for cat in categories:
+    for cat in CATEGORIES:
         items = grouped[cat]
         if not items:
             continue

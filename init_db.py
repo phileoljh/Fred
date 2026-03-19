@@ -2,7 +2,15 @@ import sqlite3
 import requests
 from datetime import datetime
 from config import FRED_API_KEY, DB_PATH, INDICATORS
-from fetch_data import init_db
+
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS observations
+                 (series_id TEXT, value TEXT, date TEXT, updated_at TEXT, 
+                  PRIMARY KEY (series_id, date))''')
+    conn.commit()
+    return conn
 
 def fetch_historical_observations(series_id, units, limit=540):
     if not FRED_API_KEY or FRED_API_KEY == 'your_fred_api_key_here':

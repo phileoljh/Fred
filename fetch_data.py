@@ -3,39 +3,7 @@ import requests
 import os
 from datetime import datetime
 from config import FRED_API_KEY, DB_PATH, INDICATORS
-
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS observations
-                 (series_id TEXT, value TEXT, date TEXT, updated_at TEXT, 
-                  PRIMARY KEY (series_id, date))''')
-    conn.commit()
-    return conn
-
-def fetch_historical_observations(series_id, units, limit=30):
-    if not FRED_API_KEY or FRED_API_KEY == 'your_fred_api_key_here':
-        print(f"Skipping API fetch for {series_id}: No valid API key provided.")
-        return []
-    
-    url = f"https://api.stlouisfed.org/fred/series/observations"
-    params = {
-        'series_id': series_id,
-        'api_key': FRED_API_KEY,
-        'file_type': 'json',
-        'limit': limit,
-        'sort_order': 'desc',
-        'units': units
-    }
-    try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
-        if 'observations' in data:
-            return [(obs['value'], obs['date']) for obs in data['observations']]
-    except Exception as e:
-        print(f"Error fetching {series_id}: {e}")
-    return []
+from init_db import init_db, fetch_historical_observations
 
 def update_data():
     conn = init_db()
@@ -108,7 +76,6 @@ def update_data():
                              ('SOFR_IORB_SPREAD', f"{spread:.4f}", date, updated_at))
             except ValueError:
                 pass
-    conn.commit()
     conn.commit()
     conn.close()
 
