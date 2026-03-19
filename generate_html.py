@@ -120,18 +120,9 @@ def get_data_for_ui():
         name_en = ""
         
         # Determine frequency for label display
-        freq_label = item['freq'].lower()
-        if freq_label in ["priority", "recession", "recovery"]:
-            # Deduce frequency based on points or id
-            if item['points'] == 30:
-                freq_label = "daily"
-            elif item['points'] == 14:
-                freq_label = "weekly"
-            elif item['points'] == 12:
-                freq_label = "monthly"
-            elif item['points'] == 4:
-                freq_label = "quarterly"
-
+        freq_label = item.get('true_freq', item['freq'].lower())
+        # For the Priority/Recession/Recovery display categories, freq is the category name,
+        # so we fall back to true_freq (already set in config) for these groups.
         if " (" in full_name and full_name.endswith(")"):
             parts = full_name.split(" (")
             name_zh = parts[0]

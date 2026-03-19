@@ -43,55 +43,55 @@ def initialize_database():
     fetched_ids = set()
     
     with requests.Session() as session:
-      for item in INDICATORS:
-        series_id = item['id']
-        if series_id in fetched_ids:
-            print(f"Skipping duplicate init fetch for {series_id}...")
-            continue
+        for item in INDICATORS:
+            series_id = item['id']
+            if series_id in fetched_ids:
+                print(f"Skipping duplicate init fetch for {series_id}...")
+                continue
+                
+            # Base time param: how many months of history to initialize
+            period = 18
             
-        # Base time param: how many months of history to initialize
-        period = 18
-        
-        # Calculate how many data points cover 18 months, based on the true publication frequency.
-        true_freq = item.get('true_freq', 'monthly')
-        if true_freq == 'daily':
-            init_limit = int(period * 22)    # ~22 trading days per month
-        elif true_freq == 'weekly':
-            init_limit = int(period * 4.345) # ~4.345 weeks per month
-        elif true_freq == 'quarterly':
-            init_limit = int(period / 3.0)   # 1 quarter every 3 months
-        else:                                # monthly (default)
-            init_limit = period
-        
-        print(f"Initializing 18-month history for {series_id} (Limit: {init_limit})...")
-        observations = fetch_historical_observations(series_id, item['units'], init_limit, session=session)
-        if not observations:
-            continue
+            # Calculate how many data points cover 18 months, based on the true publication frequency.
+            true_freq = item.get('true_freq', 'monthly')
+            if true_freq == 'daily':
+                init_limit = int(period * 22)    # ~22 trading days per month
+            elif true_freq == 'weekly':
+                init_limit = int(period * 4.345) # ~4.345 weeks per month
+            elif true_freq == 'quarterly':
+                init_limit = int(period / 3.0)   # 1 quarter every 3 months
+            else:                                # monthly (default)
+                init_limit = period
             
-        fetched_ids.add(series_id)
-            
-        # Query official FRED series last_updated to prevent all indicators from appearing NEW
-        series_url = "https://api.stlouisfed.org/fred/series"
-        series_params = {
-            'series_id': series_id,
-            'api_key': FRED_API_KEY,
-            'file_type': 'json'
-        }
-        updated_at = datetime.now().isoformat()
-        try:
-            r_info = session.get(series_url, params=series_params)
-            if r_info.status_code == 200:
-                d_info = r_info.json()
-                if 'seriess' in d_info and len(d_info['seriess']) > 0:
-                    updated_at = d_info['seriess'][0].get('last_updated', updated_at)
-        except Exception as e:
-            print(f"Error fetching metadata for {series_id}: {e}")
+            print(f"Initializing 18-month history for {series_id} (Limit: {init_limit})...")
+            observations = fetch_historical_observations(series_id, item['units'], init_limit, session=session)
+            if not observations:
+                continue
+                
+            fetched_ids.add(series_id)
+                
+            # Query official FRED series last_updated to prevent all indicators from appearing NEW
+            series_url = "https://api.stlouisfed.org/fred/series"
+            series_params = {
+                'series_id': series_id,
+                'api_key': FRED_API_KEY,
+                'file_type': 'json'
+            }
+            updated_at = datetime.now().isoformat()
+            try:
+                r_info = session.get(series_url, params=series_params)
+                if r_info.status_code == 200:
+                    d_info = r_info.json()
+                    if 'seriess' in d_info and len(d_info['seriess']) > 0:
+                        updated_at = d_info['seriess'][0].get('last_updated', updated_at)
+            except Exception as e:
+                print(f"Error fetching metadata for {series_id}: {e}")
 
-        for val, date in observations:
-            if val != '.': # Ignore missing dots
-                c.execute('''INSERT OR REPLACE INTO observations (series_id, value, date, updated_at) 
-                             VALUES (?, ?, ?, ?)''', (series_id, val, date, updated_at))
-        conn.commit()
+            for val, date in observations:
+                if val != '.': # Ignore missing dots
+                    c.execute('''INSERT OR REPLACE INTO observations (series_id, value, date, updated_at) 
+                                 VALUES (?, ?, ?, ?)''', (series_id, val, date, updated_at))
+            conn.commit()
     
     # Calculate SOFR - IORB spread historically
     c.execute("SELECT date, value FROM observations WHERE series_id='SOFR' ORDER BY date DESC LIMIT 400")

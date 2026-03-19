@@ -12,48 +12,48 @@ def update_data():
     fetched_ids = set()
     
     with requests.Session() as session:
-      for item in INDICATORS:
-        series_id = item['id']
-        if series_id in fetched_ids:
-            print(f"Skipping duplicate fetch for {series_id}...")
-            continue
+        for item in INDICATORS:
+            series_id = item['id']
+            if series_id in fetched_ids:
+                print(f"Skipping duplicate fetch for {series_id}...")
+                continue
+                
+            # Fetch Window Limit (API)
+            fetch_limit = item.get('points', 30)
             
-        # Fetch Window Limit (API)
-        fetch_limit = item.get('points', 30)
-        
-        print(f"Fetching history for {series_id} (Limit: {fetch_limit})...")
-        observations = fetch_historical_observations(series_id, item['units'], fetch_limit, session=session)
-        if not observations:
-            continue
+            print(f"Fetching history for {series_id} (Limit: {fetch_limit})...")
+            observations = fetch_historical_observations(series_id, item['units'], fetch_limit, session=session)
+            if not observations:
+                continue
+                
+            fetched_ids.add(series_id)
+                
+            # Query official FRED series last_updated
+            series_url = "https://api.stlouisfed.org/fred/series"
+            series_params = {
+                'series_id': series_id,
+                'api_key': FRED_API_KEY,
+                'file_type': 'json'
+            }
+            updated_at = datetime.now().isoformat()
+            try:
+                r_info = session.get(series_url, params=series_params)
+                if r_info.status_code == 200:
+                    d_info = r_info.json()
+                    if 'seriess' in d_info and len(d_info['seriess']) > 0:
+                        updated_at = d_info['seriess'][0].get('last_updated', updated_at)
+            except Exception as e:
+                print(f"Error fetching metadata for {series_id}: {e}")
             
-        fetched_ids.add(series_id)
-            
-        # Query official FRED series last_updated
-        series_url = "https://api.stlouisfed.org/fred/series"
-        series_params = {
-            'series_id': series_id,
-            'api_key': FRED_API_KEY,
-            'file_type': 'json'
-        }
-        updated_at = datetime.now().isoformat()
-        try:
-            r_info = session.get(series_url, params=series_params)
-            if r_info.status_code == 200:
-                d_info = r_info.json()
-                if 'seriess' in d_info and len(d_info['seriess']) > 0:
-                    updated_at = d_info['seriess'][0].get('last_updated', updated_at)
-        except Exception as e:
-            print(f"Error fetching metadata for {series_id}: {e}")
-        
-        for val, date in observations:
-            if val != '.':
-                c.execute('''INSERT INTO observations (series_id, value, date, updated_at) 
-                             VALUES (?, ?, ?, ?)
-                             ON CONFLICT(series_id, date) DO UPDATE SET 
-                             value=excluded.value
-                             WHERE observations.value != excluded.value''', 
-                             (item['id'], val, date, updated_at))
-        conn.commit()
+            for val, date in observations:
+                if val != '.':
+                    c.execute('''INSERT INTO observations (series_id, value, date, updated_at) 
+                                 VALUES (?, ?, ?, ?)
+                                 ON CONFLICT(series_id, date) DO UPDATE SET 
+                                 value=excluded.value
+                                 WHERE observations.value != excluded.value''', 
+                                 (item['id'], val, date, updated_at))
+            conn.commit()
     
     # Calculate SOFR - IORB spread historically based on recent intersecting dates
     c.execute("SELECT date, value FROM observations WHERE series_id='SOFR' ORDER BY date DESC LIMIT 400")
