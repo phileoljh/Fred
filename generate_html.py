@@ -475,7 +475,9 @@ def generate_html(data):
                     "data": item['history'],
                     "baseline": item['history_baseline'],
                     "is_negative": (item['id'] == 'SAHMREALTIME' and item['raw_val'] >= 0.5),
-                    "is_zero_baseline": (item['id'] in ["SOFR_IORB_SPREAD", "T10Y2Y", "T10Y3M"])
+                    "is_zero_baseline": (item['id'] in ["SOFR_IORB_SPREAD", "T10Y2Y", "T10Y3M"]),
+                    "fmt": item.get('format', '{value}'),
+                    "decimals": item.get('decimals', 2)
                 })
             
             baseline_html = ""
@@ -603,7 +605,11 @@ def generate_html(data):
                                 displayColors: false,
                                 callbacks: {
                                     label: function(context) {
-                                        return context.parsed.y;
+                                        if (context.datasetIndex === 0) return null;
+                                        const fmt = conf.fmt || '{value}';
+                                        const dec = conf.decimals != null ? conf.decimals : 2;
+                                        const num = parseFloat(context.parsed.y).toFixed(dec);
+                                        return fmt.replace('{value}', num);
                                     }
                                 }
                             }
