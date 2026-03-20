@@ -129,7 +129,6 @@ def get_data_for_ui():
             name_en = parts[1].replace(")", "")
             name_en = f"{name_en} ({freq_label})"
             
-        is_new_update = False
         new_badge_html = ""
         if latest_updated_at:
             try:
@@ -154,7 +153,6 @@ def get_data_for_ui():
                 updated_at_dt = datetime.fromisoformat(clean_updated.strip())
                 days_diff = (datetime.now() - updated_at_dt).days
                 if days_diff <= 7 and freq_label not in ["daily", "weekly"]:
-                    is_new_update = True
                     day_str = f"NEW ({days_diff}d)"
                     if days_diff <= 1:
                         new_badge_html = f'<span class="badge-new-1d">{day_str}</span>'
@@ -169,7 +167,6 @@ def get_data_for_ui():
             **item, 
             'name_zh': name_zh,
             'name_en': name_en,
-            'is_new_update': is_new_update,
             'new_badge_html': new_badge_html,
             'display_val': display_val, 
             'date': date_val, 
