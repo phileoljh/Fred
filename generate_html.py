@@ -155,12 +155,13 @@ def get_data_for_ui():
                 days_diff = (datetime.now() - updated_at_dt).days
                 if days_diff <= 7 and freq_label not in ["daily", "weekly"]:
                     is_new_update = True
+                    day_str = f"NEW ({days_diff}d)"
                     if days_diff <= 1:
-                        new_badge_html = '<span class="badge-new-1d">NEW (1d)</span>'
+                        new_badge_html = f'<span class="badge-new-1d">{day_str}</span>'
                     elif days_diff <= 3:
-                        new_badge_html = '<span class="badge-new-3d">NEW (3d)</span>'
+                        new_badge_html = f'<span class="badge-new-3d">{day_str}</span>'
                     else:
-                        new_badge_html = '<span class="badge-new-7d">NEW</span>'
+                        new_badge_html = f'<span class="badge-new-7d">{day_str}</span>'
             except (ValueError, TypeError):
                 pass
 
