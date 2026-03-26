@@ -669,6 +669,7 @@ def generate_ai_html(data):
     <tr>
       <th>Name</th>
       <th>Value (Released)</th>
+      <th>18M Avg / Baseline</th>
       <th>Frequency</th>
     </tr>
   </thead>
@@ -681,9 +682,17 @@ def generate_ai_html(data):
         
         for item in items:
             link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] != 'SOFR_IORB_SPREAD' else '#'
+            raw_baseline = item.get('baseline_display_val', '') or ''
+            if raw_baseline.startswith('0.00'):
+                baseline = '0 軸 (Zero Axis)'
+            elif raw_baseline:
+                baseline = f'{raw_baseline}'
+            else:
+                baseline = 'N/A'
             html_content += "    <tr>\n"
             html_content += f"      <td><a href=\"{link}\">{item['name']}</a></td>\n"
             html_content += f"      <td>{item['display_val']} (Released: {item['date']})</td>\n"
+            html_content += f"      <td>{baseline}</td>\n"
             html_content += f"      <td>{cat}</td>\n"
             html_content += "    </tr>\n"
 
