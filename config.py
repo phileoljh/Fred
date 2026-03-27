@@ -84,7 +84,7 @@ INDICATORS = [
 
     # Liquidity & Money Supply
     {"id": "WALCL", "name": "聯準會總資產 (Fed Balance Sheet)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 14, "true_freq": "weekly", "scale": 1000000, "decimals": 2},
-    {"id": "M2SL", "name": "M2 貨幣供給量 (M2 Money Supply)", "freq": "Monthly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 12, "true_freq": "monthly", "scale": 1000, "decimals": 2},
+    {"id": "M2SL", "name": "M2 貨幣供給量 (M2 Money Supply)", "freq": "Monthly", "category": "Liquidity & Money Supply", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly", "decimals": 2},
 ]
 
 # ==========================================
