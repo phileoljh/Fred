@@ -67,7 +67,8 @@ INDICATORS = [
     {"id": "PCEPILFE", "name": "核心個人消費支出物價指數 (Core PCE Price Index)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
     {"id": "PPIACO", "name": "生產者物價指數 (PPI)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
     {"id": "PPIFES", "name": "核心生產者物價指數 (Core PPI)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
-    {"id": "CES0500000003", "name": "平均每小時薪資 (Average Hourly Earnings)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
+    {"id": "CES0500000003", "name": "平均每小時薪資 (Average Hourly Earnings)", "freq": "Monthly", "category": "Labor Market", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
+    {"id": "RTWEXBGS", "name": "美元廣義貿易加權指數 (US Dollar Trade Weighted Index)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "lin", "format": "{value} pts", "points": 12, "true_freq": "monthly"},
     {"id": "PERMIT", "name": "營建許可 (Building Permits)", "freq": "Monthly", "category": "GDP Output", "units": "lin", "format": "{value}K", "points": 12, "true_freq": "monthly", "decimals": 0},
     {"id": "HOUST", "name": "新屋開工 (Housing Starts)", "freq": "Monthly", "category": "GDP Output", "units": "lin", "format": "{value}K", "points": 12, "true_freq": "monthly", "decimals": 0},
     {"id": "EXHOSLUSM495S", "name": "成屋銷售 (Existing Home Sales)", "freq": "Monthly", "category": "GDP Output", "units": "lin", "format": "{value}M", "points": 12, "true_freq": "monthly", "scale": 1000000, "decimals": 2},
@@ -80,6 +81,10 @@ INDICATORS = [
     {"id": "DRBLACBS", "name": "商業貸款違約率 (Delinquency Rate: Business Loans)", "freq": "Quarterly", "category": "Credit Risk", "units": "lin", "format": "{value}%", "points": 4, "true_freq": "quarterly"},
     {"id": "DRCCLACBS", "name": "信用卡違約率 (Delinquency Rate: Credit Card Loans)", "freq": "Quarterly", "category": "Credit Risk", "units": "lin", "format": "{value}%", "points": 4, "true_freq": "quarterly"},
     {"id": "IMPGS", "name": "進口金額年增率 (Imports)", "freq": "Quarterly", "category": "GDP Output", "units": "pc1", "format": "{value}% YoY", "points": 4, "true_freq": "quarterly"},
+
+    # Liquidity & Money Supply
+    {"id": "WALCL", "name": "聯準會總資產 (Fed Balance Sheet)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 14, "true_freq": "weekly", "scale": 1000000, "decimals": 2},
+    {"id": "M2SL", "name": "M2 貨幣供給量 (M2 Money Supply)", "freq": "Monthly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 12, "true_freq": "monthly", "scale": 1000, "decimals": 2},
 ]
 
 # ==========================================
@@ -95,19 +100,22 @@ INDICATORS = [
 #
 # < Weekly >
 # ICSA: 初領失業救濟金人數。最即時反映就業市場榮枯的高頻數據。
+# WALCL: 聯準會總資產（資產負債表規模）。QE/QT 操作的直接觀察指標，數字縮減代表聯準會正在收緊流動性。
 #
 # < Monthly >
 # PAYEMS / ADPMNUSNERSA: (大/小)非農就業人數，觀察就業市場新增動能的核心指標 (MoM 月增減)。
 # UEMPLT5: 短期失業人數，當經濟剛轉弱時，這數據會率先攀升。
 # SAHMREALTIME: 薩姆規則衰退指標，當失業率三個月移動平均比過去12個月低點高出 0.5% 時，通常代表經濟已進入衰退。
+# CES0500000003: 平均每小時薪資月增率 (MoM)。觀察有無「薪資-物價螺旋上升」的關鍵指標，也是服務業通膨的重點。
+# JTSJOL: 職缺數。勞動力市場的「需求面」，以百萬(M)人計。
+# CIVPART: 勞動參與率。就業市場結構健康的指標，影響失業率解讀。
 # RSXFS / PCEC96 / PCEDGC96: 零售銷售與其實質/耐久財消費支出，由於美國是消費大國，反映民眾最真實的消費狀況。
 # UMCSENT: 密大消費者信心，先行反映消費者未來的消費意願與通膨預期。
 # NEWORDER / INDPRO / BUSINV: 涵蓋生產流水線：下單(NEWORDER) -> 製造(INDPRO) -> 堆貨庫存(BUSINV)。
 # FEDFUNDS: 美國聯邦基金利率(聯準會基準利率)。
 # CPIAUCSL / PCEPILFE / PPIACO / PPIFES: 觀察美國消費者物價及聯準會最看重的核心PCE(月增率MoM)，與生產端出廠物價的變化。
-# JTSJOL: 職缺數。勞動力市場的「需求面」，以百萬(M)人計。
-# CIVPART: 勞動參與率。就業市場結構健康的指標，影響失業率解讀。
-# CES0500000003: 平均每小時薪資月增率 (MoM)。觀察有無「薪資-物價螺旋上升」的關鍵指標，也是服務業通膨的重點。
+# RTWEXBGS: 美元廣義貿易加權指數。衡量美元相對主要貿易夥伴貨幣的強弱，美元走強通常壓制大宗商品與新興市場。
+# M2SL: M2 貨幣供給量。廣義貨幣總量，觀察貨幣寬鬆或緊縮的長期趨勢。
 # HOUST / PERMIT: 新屋開工與營建許可。房市的先行指標，帶動後續的一連串住宅相關消費跟銀行貸款。
 # EXHOSLUSM495S: 成屋銷售。佔據房地產市場大宗交易，了解整體房價熱度與庫存去化速度。
 #

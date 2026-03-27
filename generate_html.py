@@ -19,6 +19,7 @@ CATEGORIES = [
     "Consumption & Sentiment",
     "Production & Manufacturing",
     "Monetary & Inflation",
+    "Liquidity & Money Supply",
     "Investment & Gov",
     "GDP Output"
 ]
@@ -32,6 +33,7 @@ CAT_ZH = {
     "Consumption & Sentiment": "消費與信心 (Consumption & Sentiment)",
     "Production & Manufacturing": "生產與庫存製造 (Production & Manufacturing)",
     "Monetary & Inflation": "貨幣與通膨 (Monetary & Inflation)",
+    "Liquidity & Money Supply": "流動性與貨幣供給 (Liquidity & Money Supply)",
     "Investment & Gov": "投資與政府支出 (Investment & Gov)",
     "Credit Risk": "信用風險 (Credit Risk)",
     "Credit Delinquency": "違約率 (Credit Delinquency)",
