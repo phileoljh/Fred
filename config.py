@@ -31,8 +31,8 @@ INDICATORS = [
     {"id": "ICSA", "name": "初領失業金人數 (Initial Claims)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "lin", "format": "{value}K", "points": 14, "true_freq": "weekly", "scale": 1000, "decimals": 1},
     {"id": "PCEDGC96", "name": "實質耐久財消費支出 (Real PCE: Durable Goods)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "RSXFS", "name": "零售銷售 (Retail Sales)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
-    {"id": "NEWORDER", "name": "核心資本財訂單 (Nondefense Capital Goods Orders)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
-    {"id": "IMPGS", "name": "進口金額年增率 (Imports)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 4, "true_freq": "quarterly"},
+    {"id": "NEWORDER", "name": "核心資本財訂單 (Nondefense Capital Goods Orders Excl. Aircraft)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
+    {"id": "IMPGS", "name": "商品與服務進口 (Imports of Goods & Services)", "freq": "Recovery", "category": "復甦期指標 (Recovery)", "units": "pc1", "format": "{value}% YoY", "points": 4, "true_freq": "quarterly"},
 
     # Daily (1 Month = ~22-30 points)
     {"id": "T10Y3M", "name": "10年期減3個月期公債利差 (10Y-3M Spread)", "freq": "Daily", "category": "Rates & Spreads", "units": "lin", "format": "{value}%", "points": 30, "true_freq": "daily"},
@@ -59,7 +59,7 @@ INDICATORS = [
     {"id": "RSXFS", "name": "零售銷售 (Retail Sales)", "freq": "Monthly", "category": "Consumption & Sentiment", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
     {"id": "PCEC96", "name": "實質個人消費支出 (Real PCE)", "freq": "Monthly", "category": "Consumption & Sentiment", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "PCEDGC96", "name": "實質耐久財消費支出 (Real PCE: Durable Goods)", "freq": "Monthly", "category": "Consumption & Sentiment", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
-    {"id": "NEWORDER", "name": "核心資本財訂單 (Nondefense Capital Goods Orders)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
+    {"id": "NEWORDER", "name": "核心資本財訂單 (Nondefense Capital Goods Orders Excl. Aircraft)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "INDPRO", "name": "工業生產指數 (Industrial Production)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "BUSINV", "name": "商業庫存 (Business Inventories)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "FEDFUNDS", "name": "聯邦基金有效利率 (Federal Funds Rate)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "lin", "format": "{value}%", "points": 12, "true_freq": "monthly"},
@@ -68,7 +68,7 @@ INDICATORS = [
     {"id": "PPIACO", "name": "生產者物價指數 (PPI)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
     {"id": "PPIFES", "name": "核心生產者物價指數 (Core PPI)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
     {"id": "CES0500000003", "name": "平均每小時薪資 (Average Hourly Earnings)", "freq": "Monthly", "category": "Labor Market", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
-    {"id": "RTWEXBGS", "name": "美元廣義貿易加權指數 (US Dollar Trade Weighted Index)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "lin", "format": "{value} pts", "points": 12, "true_freq": "monthly"},
+    {"id": "RTWEXBGS", "name": "實質廣義美元指數 (Real Broad Dollar Index)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "lin", "format": "{value} pts", "points": 12, "true_freq": "monthly"},
     {"id": "PERMIT", "name": "營建許可 (Building Permits)", "freq": "Monthly", "category": "GDP Output", "units": "lin", "format": "{value}K", "points": 12, "true_freq": "monthly", "decimals": 0},
     {"id": "HOUST", "name": "新屋開工 (Housing Starts)", "freq": "Monthly", "category": "GDP Output", "units": "lin", "format": "{value}K", "points": 12, "true_freq": "monthly", "decimals": 0},
     {"id": "EXHOSLUSM495S", "name": "成屋銷售 (Existing Home Sales)", "freq": "Monthly", "category": "GDP Output", "units": "lin", "format": "{value}M", "points": 12, "true_freq": "monthly", "scale": 1000000, "decimals": 2},
@@ -80,7 +80,7 @@ INDICATORS = [
     {"id": "SLCEC1", "name": "州和地方政府消費支出 (State & Local Gov Consumption)", "freq": "Quarterly", "category": "GDP Output", "units": "pc1", "format": "{value}% YoY", "points": 4, "true_freq": "quarterly"},
     {"id": "DRBLACBS", "name": "商業貸款違約率 (Delinquency Rate: Business Loans)", "freq": "Quarterly", "category": "Credit Risk", "units": "lin", "format": "{value}%", "points": 4, "true_freq": "quarterly"},
     {"id": "DRCCLACBS", "name": "信用卡違約率 (Delinquency Rate: Credit Card Loans)", "freq": "Quarterly", "category": "Credit Risk", "units": "lin", "format": "{value}%", "points": 4, "true_freq": "quarterly"},
-    {"id": "IMPGS", "name": "進口金額年增率 (Imports)", "freq": "Quarterly", "category": "GDP Output", "units": "pc1", "format": "{value}% YoY", "points": 4, "true_freq": "quarterly"},
+    {"id": "IMPGS", "name": "商品與服務進口 (Imports of Goods & Services)", "freq": "Quarterly", "category": "GDP Output", "units": "pc1", "format": "{value}% YoY", "points": 4, "true_freq": "quarterly"},
 
     # Liquidity & Money Supply
     {"id": "WALCL", "name": "聯準會總資產 (Fed Balance Sheet)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 14, "true_freq": "weekly", "scale": 1000000, "decimals": 2},
@@ -114,7 +114,7 @@ INDICATORS = [
 # NEWORDER / INDPRO / BUSINV: 涵蓋生產流水線：下單(NEWORDER) -> 製造(INDPRO) -> 堆貨庫存(BUSINV)。
 # FEDFUNDS: 美國聯邦基金利率(聯準會基準利率)。
 # CPIAUCSL / PCEPILFE / PPIACO / PPIFES: 觀察美國消費者物價及聯準會最看重的核心PCE(月增率MoM)，與生產端出廠物價的變化。
-# RTWEXBGS: 美元廣義貿易加權指數。衡量美元相對主要貿易夥伴貨幣的強弱，美元走強通常壓制大宗商品與新興市場。
+# RTWEXBGS: 實質廣義美元指數。衡量美元相對主要貿易夥伴貨幣的強弱，美元走強通常壓制大宗商品與新興市場。
 # M2SL: M2 貨幣供給量。廣義貨幣總量，觀察貨幣寬鬆或緊縮的長期趨勢。
 # HOUST / PERMIT: 新屋開工與營建許可。房市的先行指標，帶動後續的一連串住宅相關消費跟銀行貸款。
 # EXHOSLUSM495S: 成屋銷售。佔據房地產市場大宗交易，了解整體房價熱度與庫存去化速度。
