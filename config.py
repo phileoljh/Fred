@@ -88,6 +88,65 @@ INDICATORS = [
 ]
 
 # ==========================================
+# POLARITY MAPPING
+# ==========================================
+# Defines what a RISING value means for the overall market/economy.
+# "positive" = bullish (🟢 green ▲), "negative" = bearish (🔴 red ▲), "neutral" = context-dependent (⚪ gray)
+POLARITY = {
+    # 勞動力市場 (Labor Market)
+    "PAYEMS": "positive",           # 非農就業 ─ 上升代表經濟擴張
+    "ADPMNUSNERSA": "positive",     # ADP就業 ─ 民營招聘意願強
+    "JTSJOL": "positive",           # JOLTS職缺 ─ 勞動力需求旺盛
+    "CIVPART": "positive",          # 勞動參與率 ─ 供給增加緩解薪資通膨
+    "ICSA": "negative",             # 初領失業金 ─ 裁員增加景氣降溫
+    "UEMPLT5": "negative",          # 短期失業 ─ 勞動市場惡化早期訊號
+    "SAHMREALTIME": "negative",     # 薩姆規則 ─ ≥0.5 確認衰退
+    "CES0500000003": "negative",    # 平均時薪 ─ 薪資通膨壓力
+    # 經濟產出與消費 (GDP & Consumption)
+    "GDPC1": "positive",            # 實質GDP ─ 經濟健康度
+    "PCEC96": "positive",           # 實質PCE ─ 消費底盤穩固
+    "PCEDGC96": "positive",         # 耐久財消費 ─ 大筆支出信心
+    "RSXFS": "positive",            # 零售銷售 ─ 終端消費力道
+    "UMCSENT": "positive",          # 消費者信心 ─ 未來預期樂觀
+    "NEWORDER": "positive",         # 核心資本財訂單 ─ 企業擴大CAPEX
+    "INDPRO": "positive",           # 工業生產 ─ 製造業產出擴張
+    "BUSINV": "neutral",            # 商業庫存 ─ 緩升正向/暴升反向
+    # 流動性與貨幣供給 (Liquidity & Money Supply)
+    "WALCL": "positive",            # Fed資產負債表 ─ QE注入流動性
+    "M2SL": "positive",             # M2貨幣供給 ─ 金融活水支撐估值
+    # 信用風險 (Credit Risk)
+    "BAMLC0A4CBBB": "negative",     # BBB企業債利差 ─ 違約風險增加
+    "BAMLH0A0HYM2": "negative",     # 高收益債利差 ─ 避險情緒升溫
+    "BAMLH0A3HYC": "negative",      # CCC級利差 ─ 最低評級債券風險
+    "DRCCLACBS": "negative",        # 信用卡違約率 ─ 消費者財務壓力
+    "DRBLACBS": "negative",         # 商業貸款違約率 ─ 企業現金流斷裂
+    "VIXCLS": "negative",           # VIX恐慌指數 ─ 預期波動率劇增
+    # 通膨、利率與匯率 (Inflation, Rates & FX)
+    "CPIAUCSL": "negative",         # CPI ─ 通膨超標壓抑估值
+    "PCEPILFE": "negative",         # 核心PCE ─ Fed最重視通膨指標
+    "PPIACO": "negative",           # PPI ─ 企業成本上升
+    "PPIFES": "negative",           # 核心PPI ─ 同PPI邏輯
+    "FEDFUNDS": "negative",         # 聯邦基金利率 ─ 無風險利率上升
+    "RTWEXBGS": "negative",         # 廣義美元指數 ─ 強美元侵蝕海外營收
+    "T10YIE": "negative",           # 10Y平準通膨率 ─ 通膨預期升溫
+    "IORB": "negative",             # 準備金餘額利率 ─ 政策利率下限
+    "SOFR": "negative",             # SOFR ─ 短期借貸成本
+    # 殖利率利差 (Yield Spreads) ─ 需結合情境
+    "T10Y2Y": "neutral",            # 10Y-2Y利差 ─ Bull/Bear Steepening皆有可能
+    "T10Y3M": "neutral",            # 10Y-3M利差 ─ 同上
+    "SOFR_IORB_SPREAD": "negative", # SOFR-IORB利差 ─ 上升代表流動性壓力
+    # 房市 (Housing)
+    "PERMIT": "positive",           # 營建許可 ─ 房市擴張先行指標
+    "HOUST": "positive",            # 新屋開工 ─ 建設活動增加
+    "EXHOSLUSM495S": "positive",    # 成屋銷售 ─ 房市交易活絡
+    # 投資與政府支出 (Investment & Government)
+    "FPI": "positive",              # 固定私人投資 ─ 企業投資擴張
+    "PRFI": "positive",             # 私人住宅投資 ─ 住宅部門增長
+    "SLCEC1": "positive",           # 州地方政府支出 ─ 財政支持
+    "IMPGS": "neutral",             # 進口 ─ 強內需 vs. 貿易逆差雙面刃
+}
+
+# ==========================================
 # INDICATOR EXPLANATIONS (Documentation)
 # ==========================================
 # < Daily >
