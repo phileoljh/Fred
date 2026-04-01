@@ -12,19 +12,23 @@ def update_data():
     fetched_ids = set()
     
     with requests.Session() as session:
-        for item in INDICATORS:
+        failed_items = []
+
+        def process_item(item):
             series_id = item['id']
             if series_id in fetched_ids:
                 print(f"Skipping duplicate fetch for {series_id}...")
-                continue
+                return True
                 
             # Fetch Window Limit (API)
             fetch_limit = item.get('points', 30)
             
             print(f"Fetching history for {series_id} (Limit: {fetch_limit})...")
             observations = fetch_historical_observations(series_id, item['units'], fetch_limit, session=session)
+            if observations is None:
+                return False
             if not observations:
-                continue
+                return True
                 
             fetched_ids.add(series_id)
                 
@@ -53,7 +57,18 @@ def update_data():
                                  value=excluded.value
                                  WHERE observations.value != excluded.value''', 
                                  (item['id'], val, date, updated_at))
-            conn.commit()
+            return True
+
+        for item in INDICATORS:
+            if not process_item(item):
+                failed_items.append(item)
+                
+        if failed_items:
+            print(f"\n--- Retrying {len(failed_items)} failed items ---")
+            for item in failed_items:
+                process_item(item)
+                
+        conn.commit()
     
     # Calculate SOFR - IORB spread historically based on recent intersecting dates
     c.execute("SELECT date, value FROM observations WHERE series_id='SOFR' ORDER BY date DESC LIMIT 400")

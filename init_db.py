@@ -35,6 +35,7 @@ def fetch_historical_observations(series_id, units, limit=540, session=None):
             return [(obs['value'], obs['date']) for obs in data['observations']]
     except Exception as e:
         print(f"Error fetching {series_id}: {e}")
+        return None
     return []
 
 def initialize_database():
@@ -43,11 +44,13 @@ def initialize_database():
     fetched_ids = set()
     
     with requests.Session() as session:
-        for item in INDICATORS:
+        failed_items = []
+
+        def process_item(item):
             series_id = item['id']
             if series_id in fetched_ids:
                 print(f"Skipping duplicate init fetch for {series_id}...")
-                continue
+                return True
                 
             # Base time param: how many months of history to initialize
             period = 18
@@ -65,8 +68,10 @@ def initialize_database():
             
             print(f"Initializing 18-month history for {series_id} (Limit: {init_limit})...")
             observations = fetch_historical_observations(series_id, item['units'], init_limit, session=session)
+            if observations is None:
+                return False
             if not observations:
-                continue
+                return True
                 
             fetched_ids.add(series_id)
                 
@@ -91,7 +96,18 @@ def initialize_database():
                 if val != '.': # Ignore missing dots
                     c.execute('''INSERT OR REPLACE INTO observations (series_id, value, date, updated_at) 
                                  VALUES (?, ?, ?, ?)''', (series_id, val, date, updated_at))
-            conn.commit()
+            return True
+
+        for item in INDICATORS:
+            if not process_item(item):
+                failed_items.append(item)
+                
+        if failed_items:
+            print(f"\n--- Retrying {len(failed_items)} failed items ---")
+            for item in failed_items:
+                process_item(item)
+                
+        conn.commit()
     
     # Calculate SOFR - IORB spread historically
     c.execute("SELECT date, value FROM observations WHERE series_id='SOFR' ORDER BY date DESC LIMIT 400")
