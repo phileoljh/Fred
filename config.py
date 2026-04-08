@@ -50,6 +50,7 @@ INDICATORS = [
     
     # Monthly (1 Year = 12 points)
     {"id": "PAYEMS", "name": "非農就業人數 (Nonfarm Payrolls)", "freq": "Monthly", "category": "Labor Market", "units": "chg", "format": "{value}K MoM", "points": 12, "true_freq": "monthly", "decimals": 1},
+    {"id": "UNRATE", "name": "失業率 (Unemployment Rate)", "freq": "Monthly", "category": "Labor Market", "units": "lin", "format": "{value}%", "points": 12, "true_freq": "monthly"},
     {"id": "ADPMNUSNERSA", "name": "ADP小非農就業人數 (ADP Employment)", "freq": "Monthly", "category": "Labor Market", "units": "chg", "format": "{value}K MoM", "points": 12, "true_freq": "monthly", "scale": 1000, "decimals": 1},
     {"id": "UEMPLT5", "name": "短期失業人數 (Unemployed <5 Weeks)", "freq": "Monthly", "category": "Labor Market", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "JTSJOL", "name": "JOLTS 職缺數 (Job Openings)", "freq": "Monthly", "category": "Labor Market", "units": "lin", "format": "{value}M", "points": 12, "true_freq": "monthly", "scale": 1000, "decimals": 2},
@@ -99,6 +100,7 @@ POLARITY = {
     "JTSJOL": "positive",           # JOLTS職缺 ─ 勞動力需求旺盛
     "CIVPART": "positive",          # 勞動參與率 ─ 供給增加緩解薪資通膨
     "ICSA": "negative",             # 初領失業金 ─ 裁員增加景氣降溫
+    "UNRATE": "negative",           # 失業率 ─ 上升代表勞動市場惡化
     "UEMPLT5": "negative",          # 短期失業 ─ 勞動市場惡化早期訊號
     "SAHMREALTIME": "negative",     # 薩姆規則 ─ ≥0.5 確認衰退
     "CES0500000003": "negative",    # 平均時薪 ─ 薪資通膨壓力
@@ -163,6 +165,7 @@ POLARITY = {
 #
 # < Monthly >
 # PAYEMS / ADPMNUSNERSA: (大/小)非農就業人數，觀察就業市場新增動能的核心指標 (MoM 月增減)。
+# UNRATE: 失業率。勞動市場最核心的落後指標，但也最容易被一般大眾理解，上升代表景氣放緩。
 # UEMPLT5: 短期失業人數，當經濟剛轉弱時，這數據會率先攀升。
 # SAHMREALTIME: 薩姆規則衰退指標，當失業率三個月移動平均比過去12個月低點高出 0.5% 時，通常代表經濟已進入衰退。
 # CES0500000003: 平均每小時薪資月增率 (MoM)。觀察有無「薪資-物價螺旋上升」的關鍵指標，也是服務業通膨的重點。
