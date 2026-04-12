@@ -1,5 +1,7 @@
 import sqlite3
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from datetime import datetime
 from config import FRED_API_KEY, DB_PATH, INDICATORS
 
@@ -43,7 +45,13 @@ def initialize_database():
     c = conn.cursor()
     fetched_ids = set()
     
-    with requests.Session() as session:
+    session = requests.Session()
+    retries = Retry(total=5,
+                    backoff_factor=1.0,
+                    status_forcelist=[ 429, 500, 502, 503, 504 ])
+    session.mount('https://', HTTPAdapter(max_retries=retries))
+    
+    with session:
         failed_items = []
 
         def process_item(item):
