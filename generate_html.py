@@ -154,7 +154,14 @@ def get_data_for_ui():
 
                 updated_at_dt = datetime.fromisoformat(clean_updated.strip())
                 days_diff = (datetime.now() - updated_at_dt).days
-                if days_diff <= 7 and freq_label not in ["daily", "weekly"]:
+                
+                show_badge = False
+                if freq_label not in ["daily", "weekly"] and days_diff <= 7:
+                    show_badge = True
+                elif freq_label == "weekly" and days_diff <= 3:
+                    show_badge = True
+                    
+                if show_badge:
                     day_str = f"NEW ({days_diff}d)"
                     if days_diff <= 1:
                         new_badge_html = f'<span class="badge-new-1d">{day_str}</span>'
