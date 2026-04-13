@@ -260,6 +260,7 @@ def generate_html(data):
             }}
             
             .frequency-title {{
+                scroll-margin-top: 100px; /* 確保點擊連結跳轉後標題不會被導航列遮住 */
                 font-size: 1.8rem;
                 border-bottom: 2px solid var(--border-color);
                 padding-bottom: 10px;
@@ -330,14 +331,14 @@ def generate_html(data):
                 align-items: flex-start;
                 margin-bottom: 12px;
             }}
-
+ 
             .card-title-container {{
                 flex: 1;
                 display: flex;
                 flex-direction: column;
                 gap: 2px;
             }}
-
+ 
             .card-title-zh {{
                 font-size: 1.05rem;
                 font-weight: 500;
@@ -358,7 +359,7 @@ def generate_html(data):
                 gap: 10px;
                 margin-bottom: 20px;
             }}
-
+ 
             .card-value {{
                 font-size: 2.3rem;
                 font-weight: 700;
@@ -384,7 +385,7 @@ def generate_html(data):
                 white-space: nowrap;
                 margin-left: 10px;
             }}
-
+ 
             .badge-new-1d {{
                 display: inline-block;
                 padding: 2px 8px;
@@ -445,9 +446,61 @@ def generate_html(data):
                 position: relative;
                 margin-top: auto;
             }}
-
+ 
             a {{ text-decoration: none; }}
+
+            /* 導航列樣式 (Navigation Bar Styles) - 精緻磨砂玻璃質感 */
+            .nav-container {{
+                position: sticky;
+                top: 0;
+                z-index: 1000;
+                background: rgba(13, 17, 23, 0.85);
+                backdrop-filter: blur(15px);
+                -webkit-backdrop-filter: blur(15px);
+                border-bottom: 1px solid var(--border-color);
+                margin: -40px -20px 40px -20px;
+                padding: 15px 20px;
+                display: flex;
+                justify-content: center;
+                overflow-x: auto;
+            }}
+            
+            .nav-wrapper {{
+                display: flex;
+                gap: 12px;
+                max-width: 1400px;
+                width: 100%;
+                justify-content: center;
+                white-space: nowrap;
+                scrollbar-width: none; /* Firefox */
+            }}
+            
+            .nav-wrapper::-webkit-scrollbar {{
+                display: none; /* Chrome/Safari */
+            }}
+            
+            .nav-link {{
+                color: var(--text-muted);
+                font-size: 0.85rem;
+                font-weight: 600;
+                padding: 8px 16px;
+                border-radius: 10px;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                border: 1px solid transparent;
+            }}
+            
+            .nav-link:hover {{
+                color: var(--accent);
+                background: rgba(88, 166, 255, 0.1);
+                border-color: rgba(88, 166, 255, 0.2);
+            }}
+
+            /* 平滑滾動樣式 (Smooth Scroll) */
+            html {{
+                scroll-behavior: smooth;
+            }}
         </style>
+
     </head>
     <body>
         <div class="container">
@@ -458,14 +511,39 @@ def generate_html(data):
             </header>
     """
 
+
     charts_config_json = []
+
+    # ==========================================
+    # 產生成導航列 HTML (Generate Navigation Bar)
+    # ==========================================
+    nav_links = []
+    # 根據使用者需求，從 "Labor Market" (CATEGORIES[3]) 開始每個大類做一個快速連結
+    for cat in CATEGORIES[3:]:
+        if grouped.get(cat):
+            # 取得顯示名稱，並去掉括號部分以縮短導航標籤
+            display_name = CAT_ZH.get(cat, cat).split(' (')[0]
+            cat_anchor = f"cat-{cat.replace(' ', '-').replace('&', '').lower()}"
+            nav_links.append(f'<a href="#{cat_anchor}" class="nav-link">{display_name}</a>')
+    
+    nav_html = f"""
+    <div class="nav-container">
+        <div class="nav-wrapper">
+            {''.join(nav_links)}
+        </div>
+    </div>
+    """
+    
+    # 將導航列插入 header 之後 (Insert nav_html after header)
+    html_content += nav_html
 
     for cat in CATEGORIES:
         items = grouped[cat]
         if not items:
             continue
         
-        html_content += f'<div class="frequency-section"><h2 class="frequency-title">{CAT_ZH.get(cat, cat)}</h2>'
+        cat_anchor = f"cat-{cat.replace(' ', '-').replace('&', '').lower()}"
+        html_content += f'<div class="frequency-section"><h2 id="{cat_anchor}" class="frequency-title">{CAT_ZH.get(cat, cat)}</h2>'
         html_content += '<div class="grid">'
         
         for item in items:
