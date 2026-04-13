@@ -5,13 +5,16 @@
 👉 **🌐 線上展示 (Live Demo)：**
 - 📊 視覺化儀表板：[https://fred.hihimonitor.win/](https://fred.hihimonitor.win/)
 - 🤖 AI 餵食專用版：[https://fred.hihimonitor.win/ai_view.html](https://fred.hihimonitor.win/ai_view.html)
+- 📈 綜合對比儀表板：[https://fred.hihimonitor.win/combined.html](https://fred.hihimonitor.win/combined.html)
+
 ## 🌟 專案特色
 
 - **自動化新數據標示 (NEW Badge)**：精準抓取官方發布時間 (`last_updated`)，當數值為 7 天內最新公布時，圖表會自動亮起專屬發光徽章。
 - **支援 40+ 項關鍵指標**：包含利率利差、就業市場、通膨、消費信心與製造業指數等，並根據指標特性客製化呈現 (如 MoM 月增率、YoY 年增率)。
 - **自動回溯與修正**：避免使用單日快照，確保指標發布後的「修正值 (Revision)」也能同步更新圖表，但不干擾 NEW 標籤的判定。
-- **雙版本輸出**：
+- **三版本輸出**：
   - `index.html`：以深色玻璃擬物風 (Glassmorphism) 設計的精美圖表儀表板，內建歷史趨勢迷你圖 (Chart.js)。
+  - `combined.html`：**綜合對比儀表板**，將相關聯的指標（如收入 vs 支出）整合在同一張圖表中，方便進行連動性分析。
   - `ai_view.html`：僅有表格與純文字的極簡 HTML，適合直接複製貼上給 ChatGPT / Claude 等 LLM 進行分析以節省 Token。
 - **輕量級儲存**：無需部署大型資料庫，採用本地 SQLite (`fred_data.db`) 即可運行。
 
@@ -21,7 +24,8 @@
 FRED/
 ├── config.py           # 系統參數與指標名單 (API Key、指標定義，含榮景/衰退/復甦分類)
 ├── fetch_data.py       # 負責呼叫 FRED API 並將資料存入 SQLite 資料庫
-├── generate_html.py    # 讀取資料庫，並負責產生網頁 (index.html, ai_view.html)
+├── generate_html.py    # 負責產生主儀表板 (index.html, ai_view.html)
+├── combined.py         # 負責產生綜合對比儀表板 (combined.html)
 ├── .env.example        # 環境變數範例檔
 ├── requirements.txt    # Python 依賴包列表
 └── .gitignore          # 避免將敏感資料與產生的靜態網頁上傳到 Git
@@ -57,9 +61,13 @@ python fetch_data.py
 
 # 第二步：根據資料庫的內容產生儀表板
 python generate_html.py
+
+# 第三步：產生綜合對比分析儀表板 (多線對比圖)
+python combined.py
 ```
 執行完畢後，資料夾內會產生：
 - 開啟 `index.html` 用瀏覽器觀看漂亮的視覺化圖表。
+- 開啟 `combined.html` 觀看多指標對比分析。
 - 開啟 `ai_view.html` 給 AI 分析使用。
 
 ## ⏱️ 自動化部署與排程 (Cloudflare Pages + Workers)
@@ -89,7 +97,7 @@ python generate_html.py
 * **Framework preset (框架預設)：** `None`
 * **Build command (組建命令)：**
   ```bash
-  pip install -r requirements.txt && python init_db.py && python generate_html.py && mkdir -p dist && mv *.html dist/
+  pip install -r requirements.txt && python init_db.py && python generate_html.py && python combined.py && mkdir -p dist && mv *.html dist/
   ```
 * **Build output directory (組建輸出目錄)：** `dist`
   * **⚠️ 常見錯誤：** 結尾嚴禁加上斜線 (不可寫成 `dist/`)，否則系統會報錯。
