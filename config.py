@@ -90,6 +90,19 @@ INDICATORS = [
 ]
 
 # ==========================================
+# CHART GROUPS (Multi-series Comparative Analysis)
+# ==========================================
+CHART_GROUPS = [
+    {"name": "實質收入與支出 (Real Income vs. PCE)", "members": ["DSPIC96", "PCEC96"]},
+    {"name": "就業市場動能 (Labor Market Dynamics)", "members": ["PAYEMS", "ADPMNUSNERSA"]},
+    {"name": "信用利差對比 (Credit Spreads Comparison)", "members": ["BAMLC0A4CBBB", "BAMLH0A0HYM2", "BAMLH0A3HYC"]},
+    {"name": "違約風險對比 (Delinquency Rates)", "members": ["DRCCLACBS", "DRBLACBS"]},
+    {"name": "通膨指標對比 (Inflation: CPI vs. PPI)", "members": ["CPIAUCSL", "PPIACO"]},
+    {"name": "核心通膨對比 (Core Inflation: PCE vs. PPI)", "members": ["PCEPILFE", "PPIFES"]},
+    {"name": "房市先行指標 (Housing Construction)", "members": ["PERMIT", "HOUST"]},
+]
+
+# ==========================================
 # POLARITY MAPPING
 # ==========================================
 # Defines what a RISING value means for the overall market/economy.
