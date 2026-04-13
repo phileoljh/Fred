@@ -58,6 +58,7 @@ INDICATORS = [
     {"id": "SAHMREALTIME", "name": "薩姆規則衰退指標 (Sahm Rule Indicator)", "freq": "Monthly", "category": "Labor Market", "units": "lin", "format": "{value} pts", "points": 12, "true_freq": "monthly"},
     {"id": "UMCSENT", "name": "密西根大學消費者信心指數 (U.S. Consumer Sentiment)", "freq": "Monthly", "category": "Consumption & Sentiment", "units": "lin", "format": "{value} pts", "points": 12, "true_freq": "monthly"},
     {"id": "RSXFS", "name": "零售銷售 (Retail Sales)", "freq": "Monthly", "category": "Consumption & Sentiment", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
+    {"id": "DSPIC96", "name": "實質可支配個人所得 (Real Disposable Personal Income)", "freq": "Monthly", "category": "Consumption & Sentiment", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "PCEC96", "name": "實質個人消費支出 (Real PCE)", "freq": "Monthly", "category": "Consumption & Sentiment", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "PCEDGC96", "name": "實質耐久財消費支出 (Real PCE: Durable Goods)", "freq": "Monthly", "category": "Consumption & Sentiment", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "NEWORDER", "name": "核心資本財訂單 (Nondefense Capital Goods Orders Excl. Aircraft)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
@@ -107,6 +108,7 @@ POLARITY = {
     # 經濟產出與消費 (GDP & Consumption)
     "GDPC1": "positive",            # 實質GDP ─ 經濟健康度
     "PCEC96": "positive",           # 實質PCE ─ 消費底盤穩固
+    "DSPIC96": "positive",          # 實質可支配個人所得 ─ 維持消費動能的基礎
     "PCEDGC96": "positive",         # 耐久財消費 ─ 大筆支出信心
     "RSXFS": "positive",            # 零售銷售 ─ 終端消費力道
     "UMCSENT": "positive",          # 消費者信心 ─ 未來預期樂觀
@@ -171,7 +173,7 @@ POLARITY = {
 # CES0500000003: 平均每小時薪資月增率 (MoM)。觀察有無「薪資-物價螺旋上升」的關鍵指標，也是服務業通膨的重點。
 # JTSJOL: 職缺數。勞動力市場的「需求面」，以百萬(M)人計。
 # CIVPART: 勞動參與率。就業市場結構健康的指標，影響失業率解讀。
-# RSXFS / PCEC96 / PCEDGC96: 零售銷售與其實質/耐久財消費支出，由於美國是消費大國，反映民眾最真實的消費狀況。
+# RSXFS / PCEC96 / PCEDGC96 / DSPIC96: 零售銷售、實質/耐久財消費支出及實質可支配所得，由於美國是消費大國，反映民眾最真實的收入與消費狀況。
 # UMCSENT: 密大消費者信心，先行反映消費者未來的消費意願與通膨預期。
 # NEWORDER / INDPRO / BUSINV: 涵蓋生產流水線：下單(NEWORDER) -> 製造(INDPRO) -> 堆貨庫存(BUSINV)。
 # FEDFUNDS: 美國聯邦基金利率(聯準會基準利率)。
