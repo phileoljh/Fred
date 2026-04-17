@@ -99,7 +99,9 @@ CHART_GROUPS = [
     {"name": "違約風險對比 (Delinquency Rates)", "members": ["DRCCLACBS", "DRBLACBS"]},
     {"name": "通膨指標對比 (Inflation: CPI vs. PPI)", "members": ["CPIAUCSL", "PPIACO"]},
     {"name": "核心通膨對比 (Core Inflation: PCE vs. PPI)", "members": ["PCEPILFE", "PPIFES"]},
-    {"name": "房市先行指標 (Housing Construction)", "members": ["PERMIT", "HOUST"]},
+    {"name": "殖利率曲線對比 (Yield Curve Comparison)", "members": ["T10Y2Y", "T10Y3M"]},
+    {"name": "生產流水線動能 (Manufacturing Pipeline)", "members": ["NEWORDER", "INDPRO", "BUSINV"]},
+    {"name": "房地產熱度對比 (Housing Market Activity)", "members": ["HOUST", "EXHOSLUSM495S"]},
 ]
 
 # ==========================================
