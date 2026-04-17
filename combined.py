@@ -91,6 +91,7 @@ def get_composite_index():
         cat_earned_score = 0
         cat_max_weight = 0
         
+        cat_details = []
         for ind_id, ind_info in cat_data["indicators"].items():
             meta = meta_lookup.get(ind_id, {})
             c = conn.cursor()
@@ -135,7 +136,7 @@ def get_composite_index():
                     
                 cat_earned_score += score_change
                 
-            details.append({
+            cat_details.append({
                 'category': cat_name,
                 'cat_weight': cat_weight,
                 'id': ind_id,
@@ -156,6 +157,13 @@ def get_composite_index():
             cat_score_ratio = cat_earned_score / cat_max_weight
         else:
             cat_score_ratio = 0
+            
+        for d in cat_details:
+            if cat_max_weight > 0:
+                d['abs_points'] = (d['score_change'] / cat_max_weight) * cat_weight * 10
+            else:
+                d['abs_points'] = 0
+            details.append(d)
             
         total_final_score += (cat_score_ratio * cat_weight) * 10
 
@@ -278,7 +286,7 @@ def generate_combined_html(grouped_data, composite_data=None):
                                 <th>最新數值</th>
                                 <th>變化</th>
                                 <th>判定狀態</th>
-                                <th>子權重與得分</th>
+                                <th>貢獻滿分10分</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -301,10 +309,10 @@ def generate_combined_html(grouped_data, composite_data=None):
                 st_text = '➖ 無變化'
                 st_class = 'status-neutral'
                 
-            if row['sub_weight'] > 0:
-                wt_text = f"得 {row['score_change']*100:+.0f}% <br/><small style='color:var(--text-muted)'>(子權 {row['sub_weight']*100:.0f}%)</small>"
-            else:
+            if row['status'] == 'no_change' or row['sub_weight'] <= 0:
                 wt_text = "-"
+            else:
+                wt_text = f"<b style='color:var(--accent)'>{row['abs_points']:+.2f} 分</b><br/><small style='color:var(--text-muted)'>(板塊佔 {row['sub_weight']*100:.0f}%)</small>"
                 
             comp_html += f"""
                             <tr>
