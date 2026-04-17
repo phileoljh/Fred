@@ -40,24 +40,45 @@ def get_grouped_data():
         if len(sorted_dates) > 18:
             sorted_dates = sorted_dates[-18:]
             
+        # Check for magnitude consistency (e.g., mixing K and M)
+        formats = [meta.get(mid, {}).get('format', '') for mid in members]
+        has_k = any('K' in f for f in formats)
+        has_m = any('M' in f for f in formats)
+        unify_to_m = has_k and has_m # If mixed, unify all K to M for this chart
+        
         datasets = []
         colors = ['#58a6ff', '#3fb950', '#a371f7', '#d29922', '#f85149']
         
         for m_idx, mid in enumerate(members):
             data_points = []
             m_meta = meta.get(mid, {})
-            name = m_meta.get('name', mid).split(' (')[0] # Get zh name
+            
+            # Base metadata
+            name = m_meta.get('name', mid).split(' (')[0]
+            fmt = m_meta.get('format', '{value}')
+            decimals = m_meta.get('decimals', 2)
+            scale_adjust = 1.0
+            
+            # Apply dynamic conversion if needed
+            if unify_to_m and 'K' in fmt:
+                scale_adjust = 1000.0
+                fmt = fmt.replace('K', 'M')
+                decimals = 2
+                name += " (M)" # Add unit suffix to legend to be clear
             
             for d in sorted_dates:
                 val = combined_history[d].get(mid)
-                data_points.append(val) # Just the y-value for Chart.js flat labels
+                if val is not None:
+                    data_points.append(val / scale_adjust)
+                else:
+                    data_points.append(None)
             
             datasets.append({
                 'label': name,
                 'data': data_points,
                 'borderColor': colors[m_idx % len(colors)],
-                'format': m_meta.get('format', '{value}'),
-                'decimals': m_meta.get('decimals', 2)
+                'format': fmt,
+                'decimals': decimals
             })
             
         grouped_data.append({
