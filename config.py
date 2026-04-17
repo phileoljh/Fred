@@ -111,59 +111,59 @@ MACRO_SCORE_MODEL = {
         "name": "流動性與信用風險",
         "weight": 0.30,
         "indicators": {
-            "WALCL": {"polarity": "positive", "sub_weight": 4},           # Fed資產負債表
-            "M2SL": {"polarity": "positive", "sub_weight": 4},            # M2貨幣供給
-            "DRCCLACBS": {"polarity": "negative", "sub_weight": 1},       # 信用卡違約率
-            "DRBLACBS": {"polarity": "negative", "sub_weight": 1},        # 商業貸款違約率
+            "WALCL": {"polarity": "positive", "sub_weight": 0.4},         # Fed資產負債表
+            "M2SL": {"polarity": "positive", "sub_weight": 0.4},          # M2貨幣供給
+            "DRCCLACBS": {"polarity": "negative", "sub_weight": 0.1},     # 信用卡違約率
+            "DRBLACBS": {"polarity": "negative", "sub_weight": 0.1},      # 商業貸款違約率
         }
     },
     "Inflation_and_Rates": {
         "name": "通膨與利率",
         "weight": 0.25,
         "indicators": {
-            "PCEPILFE": {"polarity": "negative", "sub_weight": 5},        # 核心PCE
-            "CPIAUCSL": {"polarity": "negative", "sub_weight": 2},        # CPI
-            "FEDFUNDS": {"polarity": "negative", "sub_weight": 1},        # 聯邦基金利率
-            "PPIACO": {"polarity": "negative", "sub_weight": 1},          # PPI
-            "PPIFES": {"polarity": "negative", "sub_weight": 1},          # 核心PPI
-            "RTWEXBGS": {"polarity": "negative", "sub_weight": 0},        # 廣義美元指數 (留查不計分)
+            "PCEPILFE": {"polarity": "negative", "sub_weight": 0.5},      # 核心PCE (Fed最青睞)
+            "CPIAUCSL": {"polarity": "negative", "sub_weight": 0.3},      # CPI (市場情緒最快)
+            "PPIFES": {"polarity": "negative", "sub_weight": 0.2},        # 核心PPI (保留核心剔除雜訊)
+            "PPIACO": {"polarity": "negative", "sub_weight": 0.0},        # PPI (留查不計分)
+            "FEDFUNDS": {"polarity": "negative", "sub_weight": 0.0},      # 聯邦基金利率 (屬落後結果結果, 留查不計分)
+            "RTWEXBGS": {"polarity": "negative", "sub_weight": 0.0},      # 廣義美元指數 (留查不計分)
         }
     },
     "Labor_Market": {
         "name": "勞動力市場",
         "weight": 0.25,
         "indicators": {
-            "ICSA": {"polarity": "negative", "sub_weight": 4},            # 初領失業金
-            "PAYEMS": {"polarity": "positive", "sub_weight": 3},          # 非農就業
-            "UNRATE": {"polarity": "negative", "sub_weight": 3},          # 失業率
-            "CES0500000003": {"polarity": "negative", "sub_weight": 1},   # 平均時薪
-            "SAHMREALTIME": {"polarity": "negative", "sub_weight": 1},    # 薩姆規則
-            "ADPMNUSNERSA": {"polarity": "positive", "sub_weight": 0},    # ADP就業 (留查不計分)
-            "JTSJOL": {"polarity": "positive", "sub_weight": 0},          # JOLTS職缺 (留查不計分)
-            "CIVPART": {"polarity": "positive", "sub_weight": 0},         # 勞動參與率 (留查不計分)
-            "UEMPLT5": {"polarity": "negative", "sub_weight": 0},         # 短期失業 (留查不計分)
+            "ICSA": {"polarity": "negative", "sub_weight": 0.4},          # 初領失業金
+            "PAYEMS": {"polarity": "positive", "sub_weight": 0.3},        # 非農就業
+            "UNRATE": {"polarity": "negative", "sub_weight": 0.2},        # 失業率
+            "SAHMREALTIME": {"polarity": "negative", "sub_weight": 0.1},  # 薩姆規則
+            "CES0500000003": {"polarity": "negative", "sub_weight": 0.0}, # 平均時薪 (留查不計分)
+            "ADPMNUSNERSA": {"polarity": "positive", "sub_weight": 0.0},  # ADP就業 (留查不計分)
+            "JTSJOL": {"polarity": "positive", "sub_weight": 0.0},        # JOLTS職缺 (留查不計分)
+            "CIVPART": {"polarity": "positive", "sub_weight": 0.0},       # 勞動參與率 (留查不計分)
+            "UEMPLT5": {"polarity": "negative", "sub_weight": 0.0},       # 短期失業 (留查不計分)
         }
     },
     "GDP_and_Consumption": {
         "name": "經濟產出與消費",
         "weight": 0.20,
         "indicators": {
-            "RSXFS": {"polarity": "positive", "sub_weight": 4},           # 零售銷售
-            "GDPC1": {"polarity": "positive", "sub_weight": 2},           # 實質GDP
-            "PCEC96": {"polarity": "positive", "sub_weight": 2},          # 實質PCE
-            "INDPRO": {"polarity": "positive", "sub_weight": 2},          # 工業生產
-            "NEWORDER": {"polarity": "positive", "sub_weight": 1},        # 核心資本財訂單
-            "DSPIC96": {"polarity": "positive", "sub_weight": 0},         # 實質可支配所得 (留查不計分)
-            "PCEDGC96": {"polarity": "positive", "sub_weight": 0},        # 耐久財消費 (留查不計分)
-            "UMCSENT": {"polarity": "positive", "sub_weight": 0},         # 消費者信心 (留查不計分)
-            "BUSINV": {"polarity": "neutral", "sub_weight": 0},           # 商業庫存 (留查不計分)
-            "PERMIT": {"polarity": "positive", "sub_weight": 0},          # 營建許可 (留查不計分)
-            "HOUST": {"polarity": "positive", "sub_weight": 0},           # 新屋開工 (留查不計分)
-            "EXHOSLUSM495S": {"polarity": "positive", "sub_weight": 0},   # 成屋銷售 (留查不計分)
-            "FPI": {"polarity": "positive", "sub_weight": 0},             # 固定私人投資 (留查不計分)
-            "PRFI": {"polarity": "positive", "sub_weight": 0},            # 私人住宅投資 (留查不計分)
-            "SLCEC1": {"polarity": "positive", "sub_weight": 0},          # 州地方政府支出 (留查不計分)
-            "IMPGS": {"polarity": "neutral", "sub_weight": 0},            # 進口 (留查不計分)
+            "RSXFS": {"polarity": "positive", "sub_weight": 0.4},         # 零售銷售
+            "GDPC1": {"polarity": "positive", "sub_weight": 0.2},         # 實質GDP
+            "PCEC96": {"polarity": "positive", "sub_weight": 0.2},        # 實質PCE
+            "INDPRO": {"polarity": "positive", "sub_weight": 0.1},        # 工業生產
+            "NEWORDER": {"polarity": "positive", "sub_weight": 0.1},      # 核心資本財訂單
+            "DSPIC96": {"polarity": "positive", "sub_weight": 0.0},       # 實質可支配所得 (留查不計分)
+            "PCEDGC96": {"polarity": "positive", "sub_weight": 0.0},      # 耐久財消費 (留查不計分)
+            "UMCSENT": {"polarity": "positive", "sub_weight": 0.0},       # 消費者信心 (留查不計分)
+            "BUSINV": {"polarity": "neutral", "sub_weight": 0.0},         # 商業庫存 (留查不計分)
+            "PERMIT": {"polarity": "positive", "sub_weight": 0.0},        # 營建許可 (留查不計分)
+            "HOUST": {"polarity": "positive", "sub_weight": 0.0},         # 新屋開工 (留查不計分)
+            "EXHOSLUSM495S": {"polarity": "positive", "sub_weight": 0.0}, # 成屋銷售 (留查不計分)
+            "FPI": {"polarity": "positive", "sub_weight": 0.0},           # 固定私人投資 (留查不計分)
+            "PRFI": {"polarity": "positive", "sub_weight": 0.0},          # 私人住宅投資 (留查不計分)
+            "SLCEC1": {"polarity": "positive", "sub_weight": 0.0},        # 州地方政府支出 (留查不計分)
+            "IMPGS": {"polarity": "neutral", "sub_weight": 0.0},          # 進口 (留查不計分)
         }
     }
 }

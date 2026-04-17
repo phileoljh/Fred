@@ -302,7 +302,7 @@ def generate_combined_html(grouped_data, composite_data=None):
                 st_class = 'status-neutral'
                 
             if row['sub_weight'] > 0:
-                wt_text = f"得 {row['score_change']:+d} <br/><small style='color:var(--text-muted)'>(子權 {row['sub_weight']})</small>"
+                wt_text = f"得 {row['score_change']*100:+.0f}% <br/><small style='color:var(--text-muted)'>(子權 {row['sub_weight']*100:.0f}%)</small>"
             else:
                 wt_text = "-"
                 
