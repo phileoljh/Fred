@@ -103,64 +103,69 @@ CHART_GROUPS = [
 ]
 
 # ==========================================
-# POLARITY MAPPING
+# MACRO SCORE MODEL (Two-Tier Weighting System)
 # ==========================================
-# Defines what a RISING value means for the overall market/economy.
-# "positive" = bullish (🟢 green ▲), "negative" = bearish (🔴 red ▲), "neutral" = context-dependent (⚪ gray)
-POLARITY = {
-    # 勞動力市場 (Labor Market)
-    "PAYEMS": "positive",           # 非農就業 ─ 上升代表經濟擴張
-    "ADPMNUSNERSA": "positive",     # ADP就業 ─ 民營招聘意願強
-    "JTSJOL": "positive",           # JOLTS職缺 ─ 勞動力需求旺盛
-    "CIVPART": "positive",          # 勞動參與率 ─ 供給增加緩解薪資通膨
-    "ICSA": "negative",             # 初領失業金 ─ 裁員增加景氣降溫
-    "UNRATE": "negative",           # 失業率 ─ 上升代表勞動市場惡化
-    "UEMPLT5": "negative",          # 短期失業 ─ 勞動市場惡化早期訊號
-    "SAHMREALTIME": "negative",     # 薩姆規則 ─ ≥0.5 確認衰退
-    "CES0500000003": "negative",    # 平均時薪 ─ 薪資通膨壓力
-    # 經濟產出與消費 (GDP & Consumption)
-    "GDPC1": "positive",            # 實質GDP ─ 經濟健康度
-    "PCEC96": "positive",           # 實質PCE ─ 消費底盤穩固
-    "DSPIC96": "positive",          # 實質可支配個人所得 ─ 維持消費動能的基礎
-    "PCEDGC96": "positive",         # 耐久財消費 ─ 大筆支出信心
-    "RSXFS": "positive",            # 零售銷售 ─ 終端消費力道
-    "UMCSENT": "positive",          # 消費者信心 ─ 未來預期樂觀
-    "NEWORDER": "positive",         # 核心資本財訂單 ─ 企業擴大CAPEX
-    "INDPRO": "positive",           # 工業生產 ─ 製造業產出擴張
-    "BUSINV": "neutral",            # 商業庫存 ─ 緩升正向/暴升反向
-    # 流動性與貨幣供給 (Liquidity & Money Supply)
-    "WALCL": "positive",            # Fed資產負債表 ─ QE注入流動性
-    "M2SL": "positive",             # M2貨幣供給 ─ 金融活水支撐估值
-    # 信用風險 (Credit Risk)
-    "BAMLC0A4CBBB": "negative",     # BBB企業債利差 ─ 違約風險增加
-    "BAMLH0A0HYM2": "negative",     # 高收益債利差 ─ 避險情緒升溫
-    "BAMLH0A3HYC": "negative",      # CCC級利差 ─ 最低評級債券風險
-    "DRCCLACBS": "negative",        # 信用卡違約率 ─ 消費者財務壓力
-    "DRBLACBS": "negative",         # 商業貸款違約率 ─ 企業現金流斷裂
-    "VIXCLS": "negative",           # VIX恐慌指數 ─ 預期波動率劇增
-    # 通膨、利率與匯率 (Inflation, Rates & FX)
-    "CPIAUCSL": "negative",         # CPI ─ 通膨超標壓抑估值
-    "PCEPILFE": "negative",         # 核心PCE ─ Fed最重視通膨指標
-    "PPIACO": "negative",           # PPI ─ 企業成本上升
-    "PPIFES": "negative",           # 核心PPI ─ 同PPI邏輯
-    "FEDFUNDS": "negative",         # 聯邦基金利率 ─ 無風險利率上升
-    "RTWEXBGS": "negative",         # 廣義美元指數 ─ 強美元侵蝕海外營收
-    "T10YIE": "negative",           # 10Y平準通膨率 ─ 通膨預期升溫
-    "IORB": "negative",             # 準備金餘額利率 ─ 政策利率下限
-    "SOFR": "negative",             # SOFR ─ 短期借貸成本
-    # 殖利率利差 (Yield Spreads) ─ 需結合情境
-    "T10Y2Y": "neutral",            # 10Y-2Y利差 ─ Bull/Bear Steepening皆有可能
-    "T10Y3M": "neutral",            # 10Y-3M利差 ─ 同上
-    "SOFR_IORB_SPREAD": "negative", # SOFR-IORB利差 ─ 上升代表流動性壓力
-    # 房市 (Housing)
-    "PERMIT": "positive",           # 營建許可 ─ 房市擴張先行指標
-    "HOUST": "positive",            # 新屋開工 ─ 建設活動增加
-    "EXHOSLUSM495S": "positive",    # 成屋銷售 ─ 房市交易活絡
-    # 投資與政府支出 (Investment & Government)
-    "FPI": "positive",              # 固定私人投資 ─ 企業投資擴張
-    "PRFI": "positive",             # 私人住宅投資 ─ 住宅部門增長
-    "SLCEC1": "positive",           # 州地方政府支出 ─ 財政支持
-    "IMPGS": "neutral",             # 進口 ─ 強內需 vs. 貿易逆差雙面刃
+# Defines the multi-tiered scoring system for building the Composite Index.
+MACRO_SCORE_MODEL = {
+    "Liquidity_and_Credit": {
+        "name": "流動性與信用風險",
+        "weight": 0.30,
+        "indicators": {
+            "WALCL": {"polarity": "positive", "sub_weight": 4},           # Fed資產負債表
+            "M2SL": {"polarity": "positive", "sub_weight": 4},            # M2貨幣供給
+            "DRCCLACBS": {"polarity": "negative", "sub_weight": 1},       # 信用卡違約率
+            "DRBLACBS": {"polarity": "negative", "sub_weight": 1},        # 商業貸款違約率
+        }
+    },
+    "Inflation_and_Rates": {
+        "name": "通膨與利率",
+        "weight": 0.25,
+        "indicators": {
+            "PCEPILFE": {"polarity": "negative", "sub_weight": 5},        # 核心PCE
+            "CPIAUCSL": {"polarity": "negative", "sub_weight": 2},        # CPI
+            "FEDFUNDS": {"polarity": "negative", "sub_weight": 1},        # 聯邦基金利率
+            "PPIACO": {"polarity": "negative", "sub_weight": 1},          # PPI
+            "PPIFES": {"polarity": "negative", "sub_weight": 1},          # 核心PPI
+            "RTWEXBGS": {"polarity": "negative", "sub_weight": 0},        # 廣義美元指數 (留查不計分)
+        }
+    },
+    "Labor_Market": {
+        "name": "勞動力市場",
+        "weight": 0.25,
+        "indicators": {
+            "ICSA": {"polarity": "negative", "sub_weight": 4},            # 初領失業金
+            "PAYEMS": {"polarity": "positive", "sub_weight": 3},          # 非農就業
+            "UNRATE": {"polarity": "negative", "sub_weight": 3},          # 失業率
+            "CES0500000003": {"polarity": "negative", "sub_weight": 1},   # 平均時薪
+            "SAHMREALTIME": {"polarity": "negative", "sub_weight": 1},    # 薩姆規則
+            "ADPMNUSNERSA": {"polarity": "positive", "sub_weight": 0},    # ADP就業 (留查不計分)
+            "JTSJOL": {"polarity": "positive", "sub_weight": 0},          # JOLTS職缺 (留查不計分)
+            "CIVPART": {"polarity": "positive", "sub_weight": 0},         # 勞動參與率 (留查不計分)
+            "UEMPLT5": {"polarity": "negative", "sub_weight": 0},         # 短期失業 (留查不計分)
+        }
+    },
+    "GDP_and_Consumption": {
+        "name": "經濟產出與消費",
+        "weight": 0.20,
+        "indicators": {
+            "RSXFS": {"polarity": "positive", "sub_weight": 4},           # 零售銷售
+            "GDPC1": {"polarity": "positive", "sub_weight": 2},           # 實質GDP
+            "PCEC96": {"polarity": "positive", "sub_weight": 2},          # 實質PCE
+            "INDPRO": {"polarity": "positive", "sub_weight": 2},          # 工業生產
+            "NEWORDER": {"polarity": "positive", "sub_weight": 1},        # 核心資本財訂單
+            "DSPIC96": {"polarity": "positive", "sub_weight": 0},         # 實質可支配所得 (留查不計分)
+            "PCEDGC96": {"polarity": "positive", "sub_weight": 0},        # 耐久財消費 (留查不計分)
+            "UMCSENT": {"polarity": "positive", "sub_weight": 0},         # 消費者信心 (留查不計分)
+            "BUSINV": {"polarity": "neutral", "sub_weight": 0},           # 商業庫存 (留查不計分)
+            "PERMIT": {"polarity": "positive", "sub_weight": 0},          # 營建許可 (留查不計分)
+            "HOUST": {"polarity": "positive", "sub_weight": 0},           # 新屋開工 (留查不計分)
+            "EXHOSLUSM495S": {"polarity": "positive", "sub_weight": 0},   # 成屋銷售 (留查不計分)
+            "FPI": {"polarity": "positive", "sub_weight": 0},             # 固定私人投資 (留查不計分)
+            "PRFI": {"polarity": "positive", "sub_weight": 0},            # 私人住宅投資 (留查不計分)
+            "SLCEC1": {"polarity": "positive", "sub_weight": 0},          # 州地方政府支出 (留查不計分)
+            "IMPGS": {"polarity": "neutral", "sub_weight": 0},            # 進口 (留查不計分)
+        }
+    }
 }
 
 # ==========================================
