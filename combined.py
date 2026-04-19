@@ -3,7 +3,7 @@ import pandas as pd
 import json
 import os
 from datetime import datetime
-from config import DB_PATH, INDICATORS, CHART_GROUPS, MACRO_SCORE_MODEL, FAST_MACRO_SCORE_MODEL, COMBINED_HTML_PATH
+from config import DB_PATH, INDICATORS, CHART_GROUPS, MACRO_SCORE_MODEL, FAST_MACRO_SCORE_MODEL, COMBINED_HTML_PATH, FAST_SCORE_TIERS, MACRO_SCORE_TIERS
 
 # ==========================================
 # 綜合對比分析腳本 (Standalone Comparative Analysis)
@@ -232,8 +232,14 @@ def get_composite_index():
             delta = latest_val - prev_val
             polarity = ind_info.get("polarity", "neutral")
             sub_weight = ind_info.get("sub_weight", 0)
-            tiers = ind_info.get("score_tiers")
             
+            # 【自動化判定】：根據頻率自動切換階梯
+            # 1. 預設使用宏觀階梯 (MACRO)
+            # 2. 若為日/週報或淨流動性合成指標，套用高頻階梯 (FAST)
+            tiers = MACRO_SCORE_TIERS
+            if meta.get('true_freq') in ['daily', 'weekly'] or ind_id == 'NET_LIQUIDITY':
+                tiers = FAST_SCORE_TIERS
+
             # 獲取階梯乘數與標籤
             multiplier, intensity = get_tiered_impact(delta, prev_val, tiers)
             
@@ -369,9 +375,12 @@ def get_fast_composite_index():
             
             polarity = ind_info.get("polarity", "neutral")
             sub_weight = ind_info.get("sub_weight", 0)
-            tiers = ind_info.get("score_tiers")
-            
             delta = latest_val - baseline_val
+            
+            # 【自動化判定】：根據頻率自動切換階梯
+            tiers = MACRO_SCORE_TIERS
+            if meta.get('true_freq') in ['daily', 'weekly'] or ind_id == 'NET_LIQUIDITY':
+                tiers = FAST_SCORE_TIERS
             
             # 獲取階梯乘數與標籤 (基於百分比變動)
             multiplier, intensity = get_tiered_impact(delta, baseline_val, tiers)

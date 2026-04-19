@@ -113,11 +113,20 @@ CHART_GROUPS = [
 # ==========================================
 # 定義變動幅度的判定門檻與對應的得分乘數 (Multiplier)。
 # 用於過濾雜訊並區分變動的顯著性。
-DEFAULT_SCORE_TIERS = [
+# 專為高頻指標設計 (日報/週報)
+FAST_SCORE_TIERS = [
     {"limit_pct": 0.00, "multiplier": 0.0, "label": "平穩 (Stable)"},    # 變動 < 0.05% 視為雜訊
     {"limit_pct": 0.05, "multiplier": 0.2, "label": "微弱 (Weak)"},      # 0.05% ~ 0.2%
     {"limit_pct": 0.20, "multiplier": 0.6, "label": "溫和 (Moderate)"},  # 0.2% ~ 0.5%
     {"limit_pct": 0.50, "multiplier": 1.0, "label": "顯著 (Significant)"} # > 0.5%
+]
+
+# 專為宏觀指標設計 (月報/季報) - 門檻較寬，確保趨勢明朗才給滿分
+MACRO_SCORE_TIERS = [
+    {"limit_pct": 0.00, "multiplier": 0.0, "label": "平穩 (Stable)"},
+    {"limit_pct": 0.20, "multiplier": 0.3, "label": "微弱 (Weak)"},      # 月度變動需達 0.2% 才開始計分
+    {"limit_pct": 0.50, "multiplier": 0.7, "label": "溫和 (Moderate)"},
+    {"limit_pct": 1.00, "multiplier": 1.0, "label": "顯著 (Significant)"} # 月度變動達 1.0% 為顯著趨勢
 ]
 
 # ==========================================
@@ -129,7 +138,7 @@ MACRO_SCORE_MODEL = {
         "name": "流動性與信用風險",
         "weight": 0.30,
         "indicators": {
-            "NET_LIQUIDITY": {"polarity": "positive", "sub_weight": 0.4, "score_tiers": DEFAULT_SCORE_TIERS},  # 市場淨流動性 (合成指標)
+            "NET_LIQUIDITY": {"polarity": "positive", "sub_weight": 0.4},  # 市場淨流動性 (合成指標)
             "WALCL": {"polarity": "positive", "sub_weight": 0.0},         # 已併入淨流動性
             "WTREGEN": {"polarity": "negative", "sub_weight": 0.0},       # 已併入淨流動性
             "RRPONTSYD": {"polarity": "negative", "sub_weight": 0.0},     # 已併入淨流動性
@@ -198,13 +207,13 @@ FAST_MACRO_SCORE_MODEL = {
         "name": "流動性與利率 (Liquidity & Rates)",
         "weight": 0.40,
         "indicators": {
-            "NET_LIQUIDITY": {"polarity": "positive", "sub_weight": 0.4, "score_tiers": DEFAULT_SCORE_TIERS}, # 市場淨流動性 (合成指標)
+            "NET_LIQUIDITY": {"polarity": "positive", "sub_weight": 0.4}, # 市場淨流動性 (合成指標)
             "WALCL": {"polarity": "positive", "sub_weight": 0.0},        # 已併入淨流動性
             "WTREGEN": {"polarity": "negative", "sub_weight": 0.0},      # 已併入淨流動性
             "RRPONTSYD": {"polarity": "negative", "sub_weight": 0.0},    # 已併入淨流動性
-            "IORB": {"polarity": "negative", "sub_weight": 0.2, "score_tiers": DEFAULT_SCORE_TIERS},         # 準備金利率 (日)
-            "SOFR": {"polarity": "negative", "sub_weight": 0.2, "score_tiers": DEFAULT_SCORE_TIERS},         # 隔夜利率 (日)
-            "T10YIE": {"polarity": "positive", "sub_weight": 0.2, "score_tiers": DEFAULT_SCORE_TIERS},       # 通膨預期 (日)
+            "IORB": {"polarity": "negative", "sub_weight": 0.2},         # 準備金利率 (日)
+            "SOFR": {"polarity": "negative", "sub_weight": 0.2},         # 隔夜利率 (日)
+            "T10YIE": {"polarity": "negative", "sub_weight": 0.2},       # 通膨預期 (日): 下降有利於減輕 Fed 緊縮壓力
         }
     },
     "Credit_Risk": {
