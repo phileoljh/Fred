@@ -87,6 +87,8 @@ INDICATORS = [
 
     # Liquidity & Money Supply
     {"id": "WALCL", "name": "聯準會總資產 (Fed Balance Sheet)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 14, "true_freq": "weekly", "scale": 1000000, "decimals": 2},
+    {"id": "WTREGEN", "name": "財政部一般帳戶 (TGA Balance)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}B", "points": 14, "true_freq": "weekly", "scale": 1000, "decimals": 2},
+    {"id": "RRPONTSYD", "name": "隔夜逆回購 (Reverse Repo)", "freq": "Daily", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}B", "points": 30, "true_freq": "daily", "scale": 1, "decimals": 2},
     {"id": "M2SL", "name": "M2 貨幣供給量 (M2 Money Supply)", "freq": "Monthly", "category": "Liquidity & Money Supply", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly", "decimals": 2},
 ]
 
@@ -94,6 +96,7 @@ INDICATORS = [
 # CHART GROUPS (Multi-series Comparative Analysis)
 # ==========================================
 CHART_GROUPS = [
+    {"name": "流動性與貨幣供給 (Liquidity & Money Supply)", "members": ["M2SL", "NET_LIQUIDITY", "WALCL", "WTREGEN", "RRPONTSYD"]},
     {"name": "實質收入與支出 (Real Income vs. PCE)", "members": ["DSPIC96", "PCEC96"]},
     {"name": "就業市場動能 (Labor Market Dynamics)", "members": ["PAYEMS", "ADPMNUSNERSA"]},
     {"name": "信用利差對比 (Credit Spreads Comparison)", "members": ["BAMLC0A4CBBB", "BAMLH0A0HYM2", "BAMLH0A3HYC"]},
@@ -114,7 +117,10 @@ MACRO_SCORE_MODEL = {
         "name": "流動性與信用風險",
         "weight": 0.30,
         "indicators": {
-            "WALCL": {"polarity": "positive", "sub_weight": 0.4},         # Fed資產負債表
+            "NET_LIQUIDITY": {"polarity": "positive", "sub_weight": 0.4},  # 市場淨流動性 (合成指標)
+            "WALCL": {"polarity": "positive", "sub_weight": 0.0},         # 已併入淨流動性
+            "WTREGEN": {"polarity": "negative", "sub_weight": 0.0},       # 已併入淨流動性
+            "RRPONTSYD": {"polarity": "negative", "sub_weight": 0.0},     # 已併入淨流動性
             "M2SL": {"polarity": "positive", "sub_weight": 0.4},          # M2貨幣供給
             "DRCCLACBS": {"polarity": "negative", "sub_weight": 0.1},     # 信用卡違約率
             "DRBLACBS": {"polarity": "negative", "sub_weight": 0.1},      # 商業貸款違約率
@@ -180,7 +186,10 @@ FAST_MACRO_SCORE_MODEL = {
         "name": "流動性與利率 (Liquidity & Rates)",
         "weight": 0.40,
         "indicators": {
-            "WALCL": {"polarity": "positive", "sub_weight": 0.4},        # Fed資產 (週)
+            "NET_LIQUIDITY": {"polarity": "positive", "sub_weight": 0.4}, # 市場淨流動性 (合成指標)
+            "WALCL": {"polarity": "positive", "sub_weight": 0.0},        # 已併入淨流動性
+            "WTREGEN": {"polarity": "negative", "sub_weight": 0.0},      # 已併入淨流動性
+            "RRPONTSYD": {"polarity": "negative", "sub_weight": 0.0},    # 已併入淨流動性
             "IORB": {"polarity": "negative", "sub_weight": 0.2},         # 準備金利率 (日)
             "SOFR": {"polarity": "negative", "sub_weight": 0.2},         # 隔夜利率 (日)
             "T10YIE": {"polarity": "positive", "sub_weight": 0.2},       # 通膨預期 (日)

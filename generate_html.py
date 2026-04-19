@@ -55,8 +55,37 @@ def get_data_for_ui():
         "format": "{value}%",
         "points": 30
     }
+    
+    # Custom NET_LIQUIDITY indicator info
+    net_liq_info = {
+        "id": "NET_LIQUIDITY",
+        "name": "市場淨流動性 (Net Liquidity)",
+        "freq": "Weekly",
+        "category": "Liquidity & Money Supply",
+        "units": "lin",
+        "format": "{value}T",
+        "points": 14,
+        "scale": 1,
+        "decimals": 2
+    }
+    
     all_indicators = INDICATORS.copy()
     all_indicators.insert(3, spread_info) # Insert after SOFR
+    
+    # Insert Net Liquidity
+    all_indicators.append(net_liq_info)
+    
+    # 強制調整流動性指標順序: [M2SL, NET_LIQUIDITY, WALCL, WTREGEN, RRPONTSYD]
+    liq_order = ["M2SL", "NET_LIQUIDITY", "WALCL", "WTREGEN", "RRPONTSYD"]
+    # 先把這些指標從列表中移除
+    liq_items = [item for item in all_indicators if item['id'] in liq_order]
+    other_items = [item for item in all_indicators if item['id'] not in liq_order]
+    
+    # 按照指定順序重組流動性類別
+    sorted_liq = sorted(liq_items, key=lambda x: liq_order.index(x['id']))
+    
+    # 這裡將流動性指標放在最後（或者您可以根據類別排序邏輯放置）
+    all_indicators = other_items + sorted_liq
     
     for idx, item in enumerate(all_indicators):
         try:
@@ -94,7 +123,48 @@ def get_data_for_ui():
                 except Exception:
                     pass
             
-            # Calculate baseline (0-axis or 18-mo avg)
+            # Special handling for NET_LIQUIDITY: synthesize from components
+        if item['id'] == 'NET_LIQUIDITY':
+            components = ['WALCL', 'WTREGEN', 'RRPONTSYD']
+            comp_data = {}
+            for cid in components:
+                c.execute("SELECT value, date FROM observations WHERE series_id=? AND date >= date('now', '-18 months') ORDER BY date ASC", (cid,))
+                comp_data[cid] = {r[1]: float(r[0]) for r in c.fetchall()}
+            
+            # Align dates using WALCL as base (Weekly)
+            history = []
+            walcl_dates = sorted(comp_data.get('WALCL', {}).keys())
+            for d in walcl_dates:
+                try:
+                    v_assets = comp_data['WALCL'][d] # In Millions
+                    # For TGA and RRP (Daily/Weekly), find the nearest or same date
+                    v_tga = comp_data.get('WTREGEN', {}).get(d)
+                    v_rrp = comp_data.get('RRPONTSYD', {}).get(d)
+                    
+                    if v_tga is None or v_rrp is None:
+                        # Fallback: search for latest available before or on this date
+                        if v_tga is None:
+                            t_dates = [dt for dt in comp_data.get('WTREGEN', {}).keys() if dt <= d]
+                            if t_dates: v_tga = comp_data['WTREGEN'][max(t_dates)]
+                        if v_rrp is None:
+                            r_dates = [dt for dt in comp_data.get('RRPONTSYD', {}).keys() if dt <= d]
+                            if r_dates: v_rrp = comp_data['RRPONTSYD'][max(r_dates)]
+                    
+                    if v_assets and v_tga is not None and v_rrp is not None:
+                        # Net Liq (T) = Assets(M)/1,000,000 - TGA(M)/1,000,000 - RRP(B)/1,000
+                        net_val = (v_assets / 1000000.0) - (v_tga / 1000000.0) - (v_rrp / 1000.0)
+                        history.append({'x': d, 'y': net_val})
+                except:
+                    pass
+            
+            if history:
+                latest = history[-1]
+                val_float = latest['y']
+                display_val = f"{val_float:.2f}T"
+                date_val = latest['x']
+                # Re-reverse for consistency if needed, but get_data_for_ui expects history to be oldest-to-newest for chart
+        
+        # Calculate baseline (0-axis or 18-mo avg)
             baseline_val = None
             if history:
                 y_vals = [h['y'] for h in history]

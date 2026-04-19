@@ -23,6 +23,39 @@ def get_grouped_data():
         combined_history = {} # date -> {series_id: value}
         
         for mid in members:
+            # Special handling for NET_LIQUIDITY synthesis
+            if mid == 'NET_LIQUIDITY':
+                # Net Liquidity = WALCL - TGA - RRP
+                components = ['WALCL', 'WTREGEN', 'RRPONTSYD']
+                comp_vals = {}
+                for cid in components:
+                    c = conn.cursor()
+                    c.execute("SELECT value, date FROM observations WHERE series_id=? AND date >= date('now', '-24 months') ORDER BY date ASC", (cid,))
+                    comp_vals[cid] = {r[1]: float(r[0]) for r in c.fetchall()}
+                
+                # Use WALCL dates as base
+                for d in comp_vals.get('WALCL', {}).keys():
+                    try:
+                        v_assets = comp_vals['WALCL'][d]
+                        # Find nearest TGA/RRP
+                        v_tga = comp_vals.get('WTREGEN', {}).get(d)
+                        v_rrp = comp_vals.get('RRPONTSYD', {}).get(d)
+                        
+                        if v_tga is None:
+                            d_list = [dt for dt in comp_vals.get('WTREGEN', {}).keys() if dt <= d]
+                            if d_list: v_tga = comp_vals['WTREGEN'][max(d_list)]
+                        if v_rrp is None:
+                            d_list = [dt for dt in comp_vals.get('RRPONTSYD', {}).keys() if dt <= d]
+                            if d_list: v_rrp = comp_vals['RRPONTSYD'][max(d_list)]
+                        
+                        if v_assets and v_tga is not None and v_rrp is not None:
+                            if d not in combined_history: combined_history[d] = {}
+                            # Formula (T) = A(M)/1M - T(M)/1M - R(B)/1K
+                            combined_history[d][mid] = (v_assets / 1000000.0) - (v_tga / 1000000.0) - (v_rrp / 1000.0)
+                    except:
+                        pass
+                continue
+
             c = conn.cursor()
             # Fetch 24 months to ensure enough overlap
             c.execute("SELECT value, date FROM observations WHERE series_id=? AND date >= date('now', '-24 months') ORDER BY date ASC", (mid,))
@@ -112,20 +145,52 @@ def get_composite_index():
         cat_earned_score = 0
         cat_max_weight = 0
         
+        
         cat_details = []
         for ind_id, ind_info in cat_data["indicators"].items():
             meta = meta_lookup.get(ind_id, {})
-            c = conn.cursor()
-            c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT 2", (ind_id,))
-            rows = c.fetchall()
             
-            if len(rows) < 2:
-                continue
+            # Virtual Indicator Handling: NET_LIQUIDITY
+            if ind_id == 'NET_LIQUIDITY':
+                # Synthesize from WALCL, WTREGEN, RRPONTSYD
+                c = conn.cursor()
+                results = {}
+                for cid in ['WALCL', 'WTREGEN', 'RRPONTSYD']:
+                    c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT 2", (cid,))
+                    rows = c.fetchall()
+                    if rows: results[cid] = rows
                 
-            latest_val = float(rows[0][0])
-            latest_date = rows[0][1]
-            prev_val = float(rows[1][0])
-            prev_date = rows[1][1]
+                if len(results.get('WALCL', [])) < 2: continue
+                
+                # Get latest and prev for all
+                def get_net_liq(idx):
+                    try:
+                        v_a = float(results['WALCL'][idx][0])
+                        v_t = float(results['WTREGEN'][idx][0]) if len(results.get('WTREGEN', [])) > idx else float(results['WTREGEN'][0][0])
+                        v_r = float(results['RRPONTSYD'][idx][0]) if len(results.get('RRPONTSYD', [])) > idx else float(results['RRPONTSYD'][0][0])
+                        # Net Liq (T) = Assets(M)/1M - TGA(M)/1M - RRP(B)/1K
+                        return (v_a / 1000000.0) - (v_t / 1000000.0) - (v_r / 1000.0)
+                    except: return None
+                
+                latest_val = get_net_liq(0)
+                prev_val = get_net_liq(1)
+                latest_date = results['WALCL'][0][1]
+                prev_date = results['WALCL'][1][1]
+                
+                if latest_val is None or prev_val is None: continue
+                meta = {"name": "市場淨流動性 (Net Liquidity)", "format": "{value}T"}
+            else:
+                c = conn.cursor()
+                c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT 2", (ind_id,))
+                rows = c.fetchall()
+                
+                if len(rows) < 2:
+                    continue
+                    
+                latest_val = float(rows[0][0])
+                latest_date = rows[0][1]
+                prev_val = float(rows[1][0])
+                prev_date = rows[1][1]
             
             delta = latest_val - prev_val
             polarity = ind_info.get("polarity", "neutral")
@@ -219,32 +284,56 @@ def get_fast_composite_index():
             meta = meta_lookup.get(ind_id, {})
             c = conn.cursor()
             
-            # 判斷頻率以決定抓取數量
-            # true_freq 標註在 config INDICATORS 中
-            true_freq = meta.get('true_freq', 'monthly')
-            limit = 4 if true_freq == 'daily' else 2
-            
-            c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT ?", (ind_id, limit))
-            rows = c.fetchall()
-            
-            if not rows or len(rows) < 2:
-                continue
+            # Virtual Indicator Handling: NET_LIQUIDITY
+            if ind_id == 'NET_LIQUIDITY':
+                results = {}
+                for cid in ['WALCL', 'WTREGEN', 'RRPONTSYD']:
+                    c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT 5", (cid,))
+                    results[cid] = c.fetchall()
                 
-            latest_val = float(rows[0][0])
-            latest_date = rows[0][1]
+                if len(results.get('WALCL', [])) < 2: continue
+                
+                def get_net_liq_val(idx):
+                    try:
+                        v_a = float(results['WALCL'][idx][0])
+                        v_t = float(results['WTREGEN'][idx][0]) if len(results.get('WTREGEN', [])) > idx else float(results['WTREGEN'][0][0])
+                        v_r = float(results['RRPONTSYD'][idx][0]) if len(results.get('RRPONTSYD', [])) > idx else float(results['RRPONTSYD'][0][0])
+                        # Assets(M)/1M - TGA(M)/1M - RRP(B)/1K
+                        return (v_a / 1000000.0) - (v_t / 1000000.0) - (v_r / 1000.0)
+                    except: return None
+
+                latest_val = get_net_liq_val(0)
+                latest_date = results['WALCL'][0][1]
+                baseline_val = get_net_liq_val(1) # For Weekly-style comparison in Fast Index
+                compare_label = "前次值"
+                meta = {"name": "市場淨流動性 (Net Liquidity)", "format": "{value}T"}
+            else:
+                # 判斷頻率以決定抓取數量
+                true_freq = meta.get('true_freq', 'monthly')
+                limit = 4 if true_freq == 'daily' else 2
+                
+                c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT ?", (ind_id, limit))
+                rows = c.fetchall()
+                
+                if not rows or len(rows) < 2:
+                    continue
+                    
+                latest_val = float(rows[0][0])
+                latest_date = rows[0][1]
+                
+                # 計算基準值 (Baseline)
+                if true_freq == 'daily' and len(rows) >= 4:
+                    # 日報：取前三筆平均
+                    prev_vals = [float(r[0]) for r in rows[1:4]]
+                    baseline_val = sum(prev_vals) / len(prev_vals)
+                    compare_label = "3日均值"
+                else:
+                    # 週報或日報不足4筆：取前一筆
+                    baseline_val = float(rows[1][0])
+                    compare_label = "前次值"
+            
             polarity = ind_info.get("polarity", "neutral")
             sub_weight = ind_info.get("sub_weight", 0)
-            
-            # 計算基準值 (Baseline)
-            if true_freq == 'daily' and len(rows) >= 4:
-                # 日報：取前三筆平均
-                prev_vals = [float(r[0]) for r in rows[1:4]]
-                baseline_val = sum(prev_vals) / len(prev_vals)
-                compare_label = "3日均值"
-            else:
-                # 週報或日報不足4筆：取前一筆
-                baseline_val = float(rows[1][0])
-                compare_label = "前次值"
             
             delta = latest_val - baseline_val
             
