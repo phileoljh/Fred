@@ -3,7 +3,7 @@ import pandas as pd
 import json
 import os
 from datetime import datetime
-from config import DB_PATH, INDICATORS, CHART_GROUPS, MACRO_SCORE_MODEL, COMBINED_HTML_PATH
+from config import DB_PATH, INDICATORS, CHART_GROUPS, MACRO_SCORE_MODEL, FAST_MACRO_SCORE_MODEL, COMBINED_HTML_PATH
 
 # ==========================================
 # 綜合對比分析腳本 (Standalone Comparative Analysis)
@@ -195,7 +195,114 @@ def get_composite_index():
         'details': details
     }
 
-def generate_combined_html(grouped_data, composite_data=None):
+def get_fast_composite_index():
+    """
+    針對高頻指標（日報、週報）的快速評分模型。
+    - 週報 (Weekly): 對比「前一次」數值。
+    - 日報 (Daily): 對比「前三次有效數值之算術平均」。
+    """
+    conn = sqlite3.connect(DB_PATH)
+    meta_lookup = {item['id']: item for item in INDICATORS}
+    
+    total_final_score = 0
+    details = []
+
+    for cat_key, cat_data in FAST_MACRO_SCORE_MODEL.items():
+        cat_name = cat_data.get("name", cat_key)
+        cat_weight = cat_data.get("weight", 0)
+        
+        cat_earned_score = 0
+        cat_max_weight = 0
+        cat_details = []
+
+        for ind_id, ind_info in cat_data["indicators"].items():
+            meta = meta_lookup.get(ind_id, {})
+            c = conn.cursor()
+            
+            # 判斷頻率以決定抓取數量
+            # true_freq 標註在 config INDICATORS 中
+            true_freq = meta.get('true_freq', 'monthly')
+            limit = 4 if true_freq == 'daily' else 2
+            
+            c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT ?", (ind_id, limit))
+            rows = c.fetchall()
+            
+            if not rows or len(rows) < 2:
+                continue
+                
+            latest_val = float(rows[0][0])
+            latest_date = rows[0][1]
+            polarity = ind_info.get("polarity", "neutral")
+            sub_weight = ind_info.get("sub_weight", 0)
+            
+            # 計算基準值 (Baseline)
+            if true_freq == 'daily' and len(rows) >= 4:
+                # 日報：取前三筆平均
+                prev_vals = [float(r[0]) for r in rows[1:4]]
+                baseline_val = sum(prev_vals) / len(prev_vals)
+                compare_label = "3日均值"
+            else:
+                # 週報或日報不足4筆：取前一筆
+                baseline_val = float(rows[1][0])
+                compare_label = "前次值"
+            
+            delta = latest_val - baseline_val
+            
+            if sub_weight <= 0 or polarity == 'neutral':
+                status = 'neutral'
+                score_change = 0
+            else:
+                cat_max_weight += sub_weight
+                if delta > 0:
+                    score_change = sub_weight if polarity == 'positive' else -sub_weight
+                    status = 'favorable' if polarity == 'positive' else 'unfavorable'
+                elif delta < 0:
+                    score_change = -sub_weight if polarity == 'positive' else sub_weight
+                    status = 'unfavorable' if polarity == 'positive' else 'favorable'
+                else:
+                    status = 'no_change'
+                    score_change = 0
+                    
+                cat_earned_score += score_change
+                
+            cat_details.append({
+                'category': cat_name,
+                'cat_weight': cat_weight,
+                'id': ind_id,
+                'name': meta.get('name', ind_id),
+                'latest_val': latest_val,
+                'latest_date': latest_date,
+                'baseline_val': baseline_val,
+                'delta': delta,
+                'compare_label': compare_label,
+                'polarity': polarity,
+                'status': status,
+                'sub_weight': sub_weight,
+                'score_change': score_change,
+                'format': meta.get('format', '{value}')
+            })
+            
+        if cat_max_weight > 0:
+            cat_score_ratio = cat_earned_score / cat_max_weight
+        else:
+            cat_score_ratio = 0
+            
+        for d in cat_details:
+            if cat_max_weight > 0:
+                d['abs_points'] = (d['score_change'] / cat_max_weight) * cat_weight * 10
+            else:
+                d['abs_points'] = 0
+            details.append(d)
+            
+        total_final_score += (cat_score_ratio * cat_weight) * 10
+
+    conn.close()
+    return {
+        'score': total_final_score,
+        'details': details
+    }
+
+def generate_combined_html(grouped_data, composite_data=None, fast_composite_data=None):
     html_template = f"""
     <!DOCTYPE html>
     <html lang="zh-TW">
@@ -275,8 +382,9 @@ def generate_combined_html(grouped_data, composite_data=None):
             </header>
     """
 
-    if composite_data:
-        score_val = composite_data['score']
+    def render_index_card(data, title, description):
+        if not data: return ""
+        score_val = data['score']
         if score_val > 0:
             s_class = "score-positive"
         elif score_val < 0:
@@ -284,12 +392,11 @@ def generate_combined_html(grouped_data, composite_data=None):
         else:
             s_class = "score-neutral"
             
-        comp_html = f"""
+        html = f"""
             <div class="composite-card">
-                <div class="card-title">經濟綜合指標 (Composite Index)</div>
+                <div class="card-title">{title}</div>
                 <div style="text-align: center; color: var(--text-muted);">
-                    目前評分：+10 (完全樂觀) ~ -10 (完全悲觀) <br/>
-                    (基於四大經濟要素兩回合疊加模型)
+                    {description}
                 </div>
                 <div class="score-display {s_class}">
                     {score_val:+.2f}
@@ -302,59 +409,75 @@ def generate_combined_html(grouped_data, composite_data=None):
                             <tr>
                                 <th>板塊分類</th>
                                 <th>指標名稱</th>
-                                <th>極性</th>
-                                <th>前次數值</th>
+                                <th>基準與對比</th>
                                 <th>最新數值</th>
                                 <th>變化</th>
                                 <th>判定狀態</th>
-                                <th>貢獻滿分10分</th>
+                                <th>貢獻分數</th>
                             </tr>
                         </thead>
                         <tbody>
         """
-        for row in composite_data['details']:
-            f_prev = row['format'].replace('{value}', f"{row['prev_val']:.2f}") if row['prev_val'] is not None else 'N/A'
+        for row in data['details']:
+            latest_date_str = row.get('latest_date', 'N/A')
             f_latest = row['format'].replace('{value}', f"{row['latest_val']:.2f}") if row['latest_val'] is not None else 'N/A'
             f_delta = f"{row['delta']:+.2f}"
             
-            if row['status'] == 'favorable':
-                st_text = '🟢 有利'
-                st_class = 'status-favorable'
-            elif row['status'] == 'unfavorable':
-                st_text = '🔴 不利'
-                st_class = 'status-unfavorable'
-            elif row['status'] == 'neutral':
-                st_text = '⚪ 不計分'
-                st_class = 'status-neutral'
+            # 兼容 Fast 指標與標準指標的基準顯示
+            if 'compare_label' in row:
+                base_val = row['baseline_val']
+                label = row['compare_label']
             else:
-                st_text = '➖ 無變化'
-                st_class = 'status-neutral'
+                base_val = row.get('prev_val')
+                label = "前次值"
+            
+            f_base = row['format'].replace('{value}', f"{base_val:.2f}") if base_val is not None else 'N/A'
+            
+            if row['status'] == 'favorable':
+                st_text = '🟢 有利'; st_class = 'status-favorable'
+            elif row['status'] == 'unfavorable':
+                st_text = '🔴 不利'; st_class = 'status-unfavorable'
+            elif row['status'] == 'neutral':
+                st_text = '⚪ 不計分'; st_class = 'status-neutral'
+            else:
+                st_text = '➖ 無變化'; st_class = 'status-neutral'
                 
             if row['status'] == 'no_change' or row['sub_weight'] <= 0:
                 wt_text = "-"
             else:
                 wt_text = f"<b style='color:var(--accent)'>{row['abs_points']:+.2f} 分</b><br/><small style='color:var(--text-muted)'>(板塊佔 {row['sub_weight']*100:.0f}%)</small>"
                 
-            comp_html += f"""
+            html += f"""
                             <tr>
                                 <td><b style="color:var(--accent)">{row['category']}</b><br/><small style="color:var(--text-muted)">({int(row['cat_weight']*100)}%)</small></td>
                                 <td>{row['name']}</td>
-                                <td>{row['polarity']}</td>
-                                <td>{f_prev} <br/><small style="color:var(--text-muted)">{row['prev_date']}</small></td>
-                                <td>{f_latest} <br/><small style="color:var(--text-muted)">{row['latest_date']}</small></td>
+                                <td>{f_base} <br/><small style="color:var(--text-muted)">({label})</small></td>
+                                <td>{f_latest} <br/><small style="color:var(--text-muted)">{latest_date_str}</small></td>
                                 <td>{f_delta}</td>
                                 <td class="{st_class}">{st_text}</td>
                                 <td class="{st_class}">{wt_text}</td>
                             </tr>
             """
-            
-        comp_html += """
+        html += """
                         </tbody>
                     </table>
                 </details>
             </div>
         """
-        html_template += comp_html
+        return html
+
+    # 先渲染快速指標，再渲染標準指標
+    html_template += render_index_card(
+        fast_composite_data, 
+        "快速經濟指標 (Fast Index)", 
+        "目前評分：+10 (完全樂觀) ~ -10 (完全悲觀) <br/> 基於日報(三日均線)與週報指標之即時反饋"
+    )
+    
+    html_template += render_index_card(
+        composite_data, 
+        "經濟綜合指標 (Macro Index)", 
+        "目前評分：+10 (完全樂觀) ~ -10 (完全悲觀) <br/> 基於四大經濟板塊之月報/季報趨勢分析"
+    )
 
     html_template += """
             <div class="grid">
@@ -434,7 +557,9 @@ if __name__ == "__main__":
         print("Fetching grouped data...")
         data = get_grouped_data()
         print("Calculating composite index...")
-        comp_data = get_composite_index()
+        comp_macro = get_composite_index()
+        print("Calculating fast index...")
+        comp_fast = get_fast_composite_index()
         print(f"Generating {OUTPUT_PATH}...")
-        generate_combined_html(data, comp_data)
+        generate_combined_html(data, composite_data=comp_macro, fast_composite_data=comp_fast)
         print("Done!")

@@ -172,6 +172,42 @@ MACRO_SCORE_MODEL = {
 }
 
 # ==========================================
+# FAST MACRO SCORE MODEL (High-Frequency Indicators)
+# ==========================================
+# Logic: Weekly compares to previous value; Daily compares to average of last 3 records.
+FAST_MACRO_SCORE_MODEL = {
+    "Liquidity_Rates": {
+        "name": "流動性與利率 (Liquidity & Rates)",
+        "weight": 0.40,
+        "indicators": {
+            "WALCL": {"polarity": "positive", "sub_weight": 0.4},        # Fed資產 (週)
+            "IORB": {"polarity": "negative", "sub_weight": 0.2},         # 準備金利率 (日)
+            "SOFR": {"polarity": "negative", "sub_weight": 0.2},         # 隔夜利率 (日)
+            "T10YIE": {"polarity": "positive", "sub_weight": 0.2},       # 通膨預期 (日)
+        }
+    },
+    "Credit_Risk": {
+        "name": "信用與市場風險 (Credit & Risk)",
+        "weight": 0.30,
+        "indicators": {
+            "VIXCLS": {"polarity": "negative", "sub_weight": 0.4},       # VIX (日)
+            "BAMLH0A0HYM2": {"polarity": "negative", "sub_weight": 0.2}, # 高收益利差 (日)
+            "BAMLH0A3HYC": {"polarity": "negative", "sub_weight": 0.2},  # CCC級利差 (日)
+            "BAMLC0A4CBBB": {"polarity": "negative", "sub_weight": 0.2}, # BBB級利差 (日)
+        }
+    },
+    "Labor_Spreads": {
+        "name": "就業與利差 (Labor & Spreads)",
+        "weight": 0.30,
+        "indicators": {
+            "ICSA": {"polarity": "negative", "sub_weight": 0.5},         # 初領失業金 (週)
+            "T10Y2Y": {"polarity": "positive", "sub_weight": 0.25},      # 10Y-2Y (利差擴大通常有利)
+            "T10Y3M": {"polarity": "positive", "sub_weight": 0.25},      # 10Y-3M (利差擴大通常有利)
+        }
+    }
+}
+
+# ==========================================
 # INDICATOR EXPLANATIONS (Documentation)
 # ==========================================
 # < Daily >
