@@ -128,31 +128,36 @@ def get_grouped_data():
 # CORE SCORING LOGIC (Tiered Impact)
 # ==========================================
 
-def get_tiered_impact(delta, baseline_val, tiers):
+def get_tiered_impact(delta, baseline_val, tiers, is_rate_or_spread=False):
     """
-    根據變動幅度百分比計算評分乘數與強度標籤。
+    根據變動幅度百分比或絕對值計算評分乘數與強度標籤。
     
     參數:
     - delta: 最新值與基準值的差額
     - baseline_val: 用於計算比例的基準值 (通常為前次值或均值)
     - tiers: config.py 中定義的階梯清單
+    - is_rate_or_spread: 若為 True，則比較 limit_abs；否則比較 limit_pct
     
     回傳: (multiplier, label)
     """
-    if not tiers or not baseline_val or baseline_val == 0:
-        # 如果沒有定義階梯或基準值為 0 (如利差)，回傳全額權重
+    if not tiers:
         return 1.0, "顯著 (Significant)" if delta != 0 else "平穩 (Stable)"
     
-    # 計算變動百分比 (絕對值)
-    pct_change = (abs(delta) / abs(baseline_val)) * 100
+    # 計算變動百分比 (絕對值) 防呆
+    pct_change = (abs(delta) / abs(baseline_val)) * 100 if baseline_val else 0
     
     target_multiplier = 0.0
     target_label = "平穩 (Stable)"
     
     # 遍歷階梯找出符合的最高門檻
-    # tiers 需預先按 limit_pct 由小到大排序
+    # tiers 需預先按 limit 由小到大排序
     for tier in tiers:
-        if pct_change >= tier['limit_pct']:
+        if is_rate_or_spread:
+            meets_threshold = (abs(delta) >= tier.get('limit_abs', tier['limit_pct']))
+        else:
+            meets_threshold = (pct_change >= tier['limit_pct'])
+            
+        if meets_threshold:
             target_multiplier = tier['multiplier']
             target_label = tier['label']
         else:
@@ -240,8 +245,11 @@ def get_composite_index():
             if meta.get('true_freq') in ['daily', 'weekly'] or ind_id == 'NET_LIQUIDITY':
                 tiers = FAST_SCORE_TIERS
 
+            # 判定是否為率/利差/變動量指標 (使用絕對基點評估，避免趨近於 0 時的數學發散)
+            is_rate_or_spread = (meta.get('units') in ['pch', 'pca']) or ('%' in meta.get('format', ''))
+            
             # 獲取階梯乘數與標籤
-            multiplier, intensity = get_tiered_impact(delta, prev_val, tiers)
+            multiplier, intensity = get_tiered_impact(delta, prev_val, tiers, is_rate_or_spread)
             
             if sub_weight <= 0 or polarity == 'neutral' or multiplier == 0:
                 status = 'no_change' if multiplier == 0 else 'neutral'
@@ -382,8 +390,11 @@ def get_fast_composite_index():
             if meta.get('true_freq') in ['daily', 'weekly'] or ind_id == 'NET_LIQUIDITY':
                 tiers = FAST_SCORE_TIERS
             
-            # 獲取階梯乘數與標籤 (基於百分比變動)
-            multiplier, intensity = get_tiered_impact(delta, baseline_val, tiers)
+            # 判定是否為率/利差/變動量指標 (使用絕對基點評估，避免趨近於 0 時的數學發散)
+            is_rate_or_spread = (meta.get('units') in ['pch', 'pca', 'chg']) or ('%' in meta.get('format', ''))
+            
+            # 獲取階梯乘數與標籤
+            multiplier, intensity = get_tiered_impact(delta, baseline_val, tiers, is_rate_or_spread)
             
             if sub_weight <= 0 or polarity == 'neutral' or multiplier == 0:
                 status = 'no_change' if multiplier == 0 else 'neutral'

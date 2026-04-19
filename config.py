@@ -11,6 +11,12 @@ HTML_PATH = 'index.html'
 AI_HTML_PATH = 'ai_view.html'
 COMBINED_HTML_PATH = 'combined.html'
 
+# 【 FRED API 單位 (Units) 定義字典 】
+# lin : Levels (原始絕對數值，如總結餘、點數，或直接表示利率如 5.25%)
+# chg : Change (絕對變動量，如非農就業本月較上月增減的人數)
+# pch : Percent Change (單純百分比變動，通常指 MoM 月增率或 QoQ 季增率)
+# pc1 : Percent Change from Year Ago (較去年同期的百分比變動，即 YoY 年增率)
+# pca : Percent Change at Annual Rate (年化百分比變動，即 SAAR 季增年率或月增年率)
 # Update INDICATORS to include Chinese names and chart config
 INDICATORS = [
     # 榮景期指標 (Priority)
@@ -112,21 +118,26 @@ CHART_GROUPS = [
 # SCORE TIERS (Graduated Multipliers)
 # ==========================================
 # 定義變動幅度的判定門檻與對應的得分乘數 (Multiplier)。
-# 用於過濾雜訊並區分變動的顯著性。
+# 分為兩種判定機制以過濾雜訊：
+# 1. 「總量型指標」(如資產規模、總人數)：採用 limit_pct (百分比變動)，因為總量龐大。
+# 2. 「比率/利差/變動率型指標」(如各類利率、MoM%變動)：採用 limit_abs (絕對數值差值)。
+#    這是因為這類指標基準值常趨近於 0，若使用百分比會引發「數學發散」
+#    (例如利差 0.01% 變為 0.02%，差距 1 bps 但百分比高達 100%)，因此直接評估絕對差距。
+
 # 專為高頻指標設計 (日報/週報)
 FAST_SCORE_TIERS = [
-    {"limit_pct": 0.00, "multiplier": 0.0, "label": "平穩 (Stable)"},    # 變動 < 0.05% 視為雜訊
-    {"limit_pct": 0.05, "multiplier": 0.2, "label": "微弱 (Weak)"},      # 0.05% ~ 0.2%
-    {"limit_pct": 0.20, "multiplier": 0.6, "label": "溫和 (Moderate)"},  # 0.2% ~ 0.5%
-    {"limit_pct": 0.50, "multiplier": 1.0, "label": "顯著 (Significant)"} # > 0.5%
+    {"limit_pct": 0.00, "limit_abs": 0.00, "multiplier": 0.0, "label": "平穩 (Stable)"},
+    {"limit_pct": 0.05, "limit_abs": 0.02, "multiplier": 0.2, "label": "微弱 (Weak)"},      # 利差變動 2 bps (0.02%)
+    {"limit_pct": 0.20, "limit_abs": 0.05, "multiplier": 0.6, "label": "溫和 (Moderate)"},  # 利差變動 5 bps (0.05%)
+    {"limit_pct": 0.50, "limit_abs": 0.10, "multiplier": 1.0, "label": "顯著 (Significant)"}# 利差變動 10 bps (0.10%)
 ]
 
 # 專為宏觀指標設計 (月報/季報) - 門檻較寬，確保趨勢明朗才給滿分
 MACRO_SCORE_TIERS = [
-    {"limit_pct": 0.00, "multiplier": 0.0, "label": "平穩 (Stable)"},
-    {"limit_pct": 0.20, "multiplier": 0.3, "label": "微弱 (Weak)"},      # 月度變動需達 0.2% 才開始計分
-    {"limit_pct": 0.50, "multiplier": 0.7, "label": "溫和 (Moderate)"},
-    {"limit_pct": 1.00, "multiplier": 1.0, "label": "顯著 (Significant)"} # 月度變動達 1.0% 為顯著趨勢
+    {"limit_pct": 0.00, "limit_abs": 0.00, "multiplier": 0.0, "label": "平穩 (Stable)"},
+    {"limit_pct": 0.20, "limit_abs": 0.10, "multiplier": 0.3, "label": "微弱 (Weak)"},      # 絕對變動 0.1% 或是 10 bps
+    {"limit_pct": 0.50, "limit_abs": 0.25, "multiplier": 0.7, "label": "溫和 (Moderate)"},  # 絕對變動 0.25%
+    {"limit_pct": 1.00, "limit_abs": 0.50, "multiplier": 1.0, "label": "顯著 (Significant)"}# 絕對變動 0.50% 以上
 ]
 
 # ==========================================
