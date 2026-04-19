@@ -165,26 +165,26 @@ def get_data_for_ui():
                 # Re-reverse for consistency if needed, but get_data_for_ui expects history to be oldest-to-newest for chart
         
         # Calculate baseline (0-axis or 18-mo avg)
-            baseline_val = None
-            if history:
-                y_vals = [h['y'] for h in history]
-                
-                # Only apply the forced 0.0 baseline to the three specific yield spread indicators 
-                # requested by the user. Everything else falls back to the 18-month moving average.
-                zero_axis_indicators = ["SOFR_IORB_SPREAD", "T10Y2Y", "T10Y3M"]
-                
-                if item['id'] in zero_axis_indicators:
-                    baseline_val = 0.0
-                else:
-                    baseline_val = sum(y_vals) / len(y_vals)
-                    
-            history_baseline = [{'x': h['x'], 'y': baseline_val} for h in history] if baseline_val is not None else []
+        baseline_val = None
+        if history:
+            y_vals = [h['y'] for h in history]
             
-            baseline_display = ""
-            if baseline_val is not None:
-                decimals = item.get('decimals', 2)
-                num_str = "0.00" if baseline_val == 0.0 else f"{baseline_val:.{decimals}f}"
-                baseline_display = item['format'].format(value=num_str)
+            # Only apply the forced 0.0 baseline to the three specific yield spread indicators 
+            # requested by the user. Everything else falls back to the 18-month moving average.
+            zero_axis_indicators = ["SOFR_IORB_SPREAD", "T10Y2Y", "T10Y3M"]
+            
+            if item['id'] in zero_axis_indicators:
+                baseline_val = 0.0
+            else:
+                baseline_val = sum(y_vals) / len(y_vals)
+                
+        history_baseline = [{'x': h['x'], 'y': baseline_val} for h in history] if baseline_val is not None else []
+        
+        baseline_display = ""
+        if baseline_val is not None:
+            decimals = item.get('decimals', 2)
+            num_str = "0.00" if baseline_val == 0.0 else f"{baseline_val:.{decimals}f}"
+            baseline_display = item['format'].format(value=num_str)
         
         # Split English and Chinese for cleaner UI
         full_name = item['name']
