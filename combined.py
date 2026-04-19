@@ -30,7 +30,7 @@ def get_grouped_data():
                 comp_vals = {}
                 for cid in components:
                     c = conn.cursor()
-                    c.execute("SELECT value, date FROM observations WHERE series_id=? AND date >= date('now', '-24 months') ORDER BY date ASC", (cid,))
+                    c.execute("SELECT value, date FROM observations WHERE series_id=? AND date >= date('now', '-18 months') ORDER BY date ASC", (cid,))
                     comp_vals[cid] = {r[1]: float(r[0]) for r in c.fetchall()}
                 
                 # Use WALCL dates as base
@@ -57,8 +57,7 @@ def get_grouped_data():
                 continue
 
             c = conn.cursor()
-            # Fetch 24 months to ensure enough overlap
-            c.execute("SELECT value, date FROM observations WHERE series_id=? AND date >= date('now', '-24 months') ORDER BY date ASC", (mid,))
+            c.execute("SELECT value, date FROM observations WHERE series_id=? AND date >= date('now', '-18 months') ORDER BY date ASC", (mid,))
             for val, date in c.fetchall():
                 if date not in combined_history:
                     combined_history[date] = {}
@@ -69,9 +68,6 @@ def get_grouped_data():
         
         # Sort dates
         sorted_dates = sorted(combined_history.keys())
-        # Filter to 18 points for UI clarity
-        if len(sorted_dates) > 18:
-            sorted_dates = sorted_dates[-18:]
             
         # Check for magnitude consistency (e.g., mixing K and M)
         formats = [meta.get(mid, {}).get('format', '') for mid in members]
@@ -663,8 +659,9 @@ def generate_combined_html(grouped_data, composite_data=None, fast_composite_dat
                             data: ds.data,
                             borderColor: ds.borderColor,
                             backgroundColor: 'transparent',
-                            borderWidth: 3,
-                            pointRadius: 2,
+                            borderWidth: group.labels.length > 50 ? 2 : 3,
+                            pointRadius: group.labels.length > 50 ? 0 : 2,
+                            pointHoverRadius: 4,
                             tension: 0.3,
                             spanGaps: true
                         }))

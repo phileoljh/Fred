@@ -102,7 +102,6 @@ INDICATORS = [
 # CHART GROUPS (Multi-series Comparative Analysis)
 # ==========================================
 CHART_GROUPS = [
-    {"name": "流動性與貨幣供給 (Liquidity & Money Supply)", "members": ["M2SL", "NET_LIQUIDITY", "WALCL", "WTREGEN", "RRPONTSYD"]},
     {"name": "實質收入與支出 (Real Income vs. PCE)", "members": ["DSPIC96", "PCEC96"]},
     {"name": "就業市場動能 (Labor Market Dynamics)", "members": ["PAYEMS", "ADPMNUSNERSA"]},
     {"name": "信用利差對比 (Credit Spreads Comparison)", "members": ["BAMLC0A4CBBB", "BAMLH0A0HYM2", "BAMLH0A3HYC"]},
