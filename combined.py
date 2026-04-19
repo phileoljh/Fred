@@ -3,13 +3,13 @@ import pandas as pd
 import json
 import os
 from datetime import datetime
-from config import DB_PATH, INDICATORS, CHART_GROUPS, MACRO_SCORE_MODEL
+from config import DB_PATH, INDICATORS, CHART_GROUPS, MACRO_SCORE_MODEL, COMBINED_HTML_PATH
 
 # ==========================================
 # 綜合對比分析腳本 (Standalone Comparative Analysis)
 # ==========================================
 
-OUTPUT_PATH = 'combined.html'
+OUTPUT_PATH = COMBINED_HTML_PATH
 
 def get_grouped_data():
     conn = sqlite3.connect(DB_PATH)

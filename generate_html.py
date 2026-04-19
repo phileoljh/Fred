@@ -3,7 +3,7 @@ import json
 import os
 import sys
 from datetime import datetime
-from config import DB_PATH, HTML_PATH, AI_HTML_PATH, INDICATORS
+from config import DB_PATH, HTML_PATH, AI_HTML_PATH, INDICATORS, COMBINED_HTML_PATH
 
 # ==========================================
 # MODULE-LEVEL CONSTANTS (shared by all generators)
@@ -499,6 +499,41 @@ def generate_html(data):
             html {{
                 scroll-behavior: smooth;
             }}
+            /* 底部連結區塊樣式 (Footer Links) */
+            .footer-links {{
+                margin-top: 80px;
+                padding: 40px 20px;
+                border-top: 1px solid var(--border-color);
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                flex-wrap: wrap;
+            }}
+            
+            .footer-btn {{
+                background: var(--surface-color);
+                border: 1px solid var(--border-color);
+                color: var(--text-main);
+                padding: 12px 24px;
+                border-radius: 12px;
+                font-size: 0.95rem;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }}
+            
+            .footer-btn:hover {{
+                border-color: var(--accent);
+                background: rgba(88, 166, 255, 0.1);
+                transform: translateY(-2px);
+                color: var(--accent);
+            }}
+
+            .footer-btn svg {{
+                opacity: 0.7;
+            }}
         </style>
 
     </head>
@@ -597,10 +632,23 @@ def generate_html(data):
             </a>
             """
         html_content += '</div></div>'
-
-    html_content += """
+ 
+    html_content += f"""
+            <!-- 底部擴充連結 (Footer Expansion Links) -->
+            <div class="footer-links">
+                <a href="{COMBINED_HTML_PATH}" class="footer-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"></path><path d="M18 9l-5 5-2-2-4 4"></path></svg>
+                    切換至：綜合對比儀表板
+                </a>
+                <a href="{AI_HTML_PATH}" class="footer-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="13" y2="17"></line></svg>
+                    切換至：AI 專用精簡版
+                </a>
+            </div>
         </div>
-        
+    """
+    
+    html_content += """
         <script>
             // Chart configuration and rendering
             const chartConfigs = """ + json.dumps(charts_config_json) + """;

@@ -9,6 +9,7 @@ FRED_API_KEY = os.getenv('FRED_API_KEY')
 DB_PATH = 'fred_data.db'
 HTML_PATH = 'index.html'
 AI_HTML_PATH = 'ai_view.html'
+COMBINED_HTML_PATH = 'combined.html'
 
 # Update INDICATORS to include Chinese names and chart config
 INDICATORS = [
