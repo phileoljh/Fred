@@ -124,6 +124,42 @@ def get_grouped_data():
     conn.close()
     return grouped_data
 
+# ==========================================
+# CORE SCORING LOGIC (Tiered Impact)
+# ==========================================
+
+def get_tiered_impact(delta, baseline_val, tiers):
+    """
+    根據變動幅度百分比計算評分乘數與強度標籤。
+    
+    參數:
+    - delta: 最新值與基準值的差額
+    - baseline_val: 用於計算比例的基準值 (通常為前次值或均值)
+    - tiers: config.py 中定義的階梯清單
+    
+    回傳: (multiplier, label)
+    """
+    if not tiers or not baseline_val or baseline_val == 0:
+        # 如果沒有定義階梯或基準值為 0 (如利差)，回傳全額權重
+        return 1.0, "顯著 (Significant)" if delta != 0 else "平穩 (Stable)"
+    
+    # 計算變動百分比 (絕對值)
+    pct_change = (abs(delta) / abs(baseline_val)) * 100
+    
+    target_multiplier = 0.0
+    target_label = "平穩 (Stable)"
+    
+    # 遍歷階梯找出符合的最高門檻
+    # tiers 需預先按 limit_pct 由小到大排序
+    for tier in tiers:
+        if pct_change >= tier['limit_pct']:
+            target_multiplier = tier['multiplier']
+            target_label = tier['label']
+        else:
+            break
+            
+    return target_multiplier, target_label
+
 def get_composite_index():
     """
     計算綜合指標 (雙層權重架構)，分數區間落在 +10 到 -10 之間。
@@ -187,40 +223,35 @@ def get_composite_index():
                 if len(rows) < 2:
                     continue
                     
-                latest_val = float(rows[0][0])
+                scale = meta.get('scale', 1)
+                latest_val = float(rows[0][0]) / scale
                 latest_date = rows[0][1]
-                prev_val = float(rows[1][0])
+                prev_val = float(rows[1][0]) / scale
                 prev_date = rows[1][1]
             
             delta = latest_val - prev_val
             polarity = ind_info.get("polarity", "neutral")
             sub_weight = ind_info.get("sub_weight", 0)
+            tiers = ind_info.get("score_tiers")
             
-            if sub_weight <= 0 or polarity == 'neutral':
-                status = 'neutral'
+            # 獲取階梯乘數與標籤
+            multiplier, intensity = get_tiered_impact(delta, prev_val, tiers)
+            
+            if sub_weight <= 0 or polarity == 'neutral' or multiplier == 0:
+                status = 'no_change' if multiplier == 0 else 'neutral'
                 score_change = 0
             else:
                 cat_max_weight += sub_weight
-                if delta > 0:
-                    if polarity == 'positive':
-                        status = 'favorable'
-                        score_change = sub_weight
-                    else: # negative
-                        status = 'unfavorable'
-                        score_change = -sub_weight
-                elif delta < 0:
-                    if polarity == 'positive':
-                        status = 'unfavorable'
-                        score_change = -sub_weight
-                    else: # negative
-                        status = 'favorable'
-                        score_change = sub_weight
+                # 最終得分 = 子權重 * 階梯乘數 * 方向
+                direction = 1 if (delta > 0 and polarity == 'positive') or (delta < 0 and polarity == 'negative') else -1
+                score_change = sub_weight * multiplier * direction
+                
+                if direction == 1:
+                    status = 'favorable'
                 else:
-                    # delta == 0
-                    status = 'no_change'
-                    score_change = 0
+                    status = 'unfavorable'
                     
-                cat_earned_score += score_change
+            cat_earned_score += score_change
                 
             cat_details.append({
                 'category': cat_name,
@@ -234,9 +265,12 @@ def get_composite_index():
                 'delta': delta,
                 'polarity': polarity,
                 'status': status,
+                'intensity': intensity,
+                'multiplier': multiplier,
                 'sub_weight': sub_weight,
                 'score_change': score_change,
-                'format': meta.get('format', '{value}')
+                'format': meta.get('format', '{value}'),
+                'decimals': meta.get('decimals', 2)
             })
             
         if cat_max_weight > 0:
@@ -279,12 +313,12 @@ def get_fast_composite_index():
         cat_earned_score = 0
         cat_max_weight = 0
         cat_details = []
-
+        
         for ind_id, ind_info in cat_data["indicators"].items():
             meta = meta_lookup.get(ind_id, {})
             c = conn.cursor()
             
-            # Virtual Indicator Handling: NET_LIQUIDITY
+            # 1. 處理虛擬合成指標: NET_LIQUIDITY (市場淨流動性)
             if ind_id == 'NET_LIQUIDITY':
                 results = {}
                 for cid in ['WALCL', 'WTREGEN', 'RRPONTSYD']:
@@ -293,67 +327,71 @@ def get_fast_composite_index():
                 
                 if len(results.get('WALCL', [])) < 2: continue
                 
+                # 合成運算: 兆 (T) = Assets(M)/1M - TGA(M)/1M - RRP(B)/1K
                 def get_net_liq_val(idx):
                     try:
                         v_a = float(results['WALCL'][idx][0])
                         v_t = float(results['WTREGEN'][idx][0]) if len(results.get('WTREGEN', [])) > idx else float(results['WTREGEN'][0][0])
                         v_r = float(results['RRPONTSYD'][idx][0]) if len(results.get('RRPONTSYD', [])) > idx else float(results['RRPONTSYD'][0][0])
-                        # Assets(M)/1M - TGA(M)/1M - RRP(B)/1K
                         return (v_a / 1000000.0) - (v_t / 1000000.0) - (v_r / 1000.0)
                     except: return None
 
                 latest_val = get_net_liq_val(0)
                 latest_date = results['WALCL'][0][1]
-                baseline_val = get_net_liq_val(1) # For Weekly-style comparison in Fast Index
+                baseline_val = get_net_liq_val(1) # 週更邏輯：對比前週值
                 compare_label = "前次值"
-                meta = {"name": "市場淨流動性 (Net Liquidity)", "format": "{value}T"}
+                # 強制使用手動元數據以匹配合成結果
+                meta = {"name": "市場淨流動性 (Net Liquidity)", "format": "{value}T", "decimals": 2}
+                
             else:
-                # 判斷頻率以決定抓取數量
-                true_freq = meta.get('true_freq', 'monthly')
-                limit = 4 if true_freq == 'daily' else 2
+                # 2. 處理一般指標：區分頻率並執行數值縮放 (Scale)
+                true_freq = meta.get('true_freq', 'weekly')
+                scale = meta.get('scale', 1)
                 
-                c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT ?", (ind_id, limit))
-                rows = c.fetchall()
-                
-                if not rows or len(rows) < 2:
-                    continue
-                    
-                latest_val = float(rows[0][0])
-                latest_date = rows[0][1]
-                
-                # 計算基準值 (Baseline)
-                if true_freq == 'daily' and len(rows) >= 4:
-                    # 日報：取前三筆平均
-                    prev_vals = [float(r[0]) for r in rows[1:4]]
-                    baseline_val = sum(prev_vals) / len(prev_vals)
+                if true_freq == 'daily':
+                    # 日報指標：抓取 4 筆觀察值，以計算「前 3 日均值」作為基準
+                    c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT 4", (ind_id,))
+                    rows = c.fetchall()
+                    if len(rows) < 4: continue
+                    latest_val = float(rows[0][0]) / scale
+                    latest_date = rows[0][1]
+                    baseline_val = sum(float(r[0]) for r in rows[1:]) / (3 * scale)
                     compare_label = "3日均值"
                 else:
-                    # 週報或日報不足4筆：取前一筆
-                    baseline_val = float(rows[1][0])
+                    # 週報指標：抓取 2 筆，對比前次值
+                    c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT 2", (ind_id,))
+                    rows = c.fetchall()
+                    if len(rows) < 2: continue
+                    latest_val = float(rows[0][0]) / scale
+                    latest_date = rows[0][1]
+                    baseline_val = float(rows[1][0]) / scale
                     compare_label = "前次值"
             
             polarity = ind_info.get("polarity", "neutral")
             sub_weight = ind_info.get("sub_weight", 0)
+            tiers = ind_info.get("score_tiers")
             
             delta = latest_val - baseline_val
             
-            if sub_weight <= 0 or polarity == 'neutral':
-                status = 'neutral'
+            # 獲取階梯乘數與標籤 (基於百分比變動)
+            multiplier, intensity = get_tiered_impact(delta, baseline_val, tiers)
+            
+            if sub_weight <= 0 or polarity == 'neutral' or multiplier == 0:
+                status = 'no_change' if multiplier == 0 else 'neutral'
                 score_change = 0
             else:
                 cat_max_weight += sub_weight
-                if delta > 0:
-                    score_change = sub_weight if polarity == 'positive' else -sub_weight
-                    status = 'favorable' if polarity == 'positive' else 'unfavorable'
-                elif delta < 0:
-                    score_change = -sub_weight if polarity == 'positive' else sub_weight
-                    status = 'unfavorable' if polarity == 'positive' else 'favorable'
-                else:
-                    status = 'no_change'
-                    score_change = 0
-                    
-                cat_earned_score += score_change
+                # 最終得分 = 子權重 * 階梯乘數 * 方向
+                direction = 1 if (delta > 0 and polarity == 'positive') or (delta < 0 and polarity == 'negative') else -1
+                score_change = sub_weight * multiplier * direction
                 
+                if direction == 1:
+                    status = 'favorable'
+                else:
+                    status = 'unfavorable'
+            
+            cat_earned_score += score_change
+            
             cat_details.append({
                 'category': cat_name,
                 'cat_weight': cat_weight,
@@ -366,9 +404,12 @@ def get_fast_composite_index():
                 'compare_label': compare_label,
                 'polarity': polarity,
                 'status': status,
+                'intensity': intensity, # 新增強度
+                'multiplier': multiplier, # 新增乘數
                 'sub_weight': sub_weight,
                 'score_change': score_change,
-                'format': meta.get('format', '{value}')
+                'format': meta.get('format', '{value}'),
+                'decimals': meta.get('decimals', 2) # 傳遞小數位數
             })
             
         if cat_max_weight > 0:
@@ -509,8 +550,9 @@ def generate_combined_html(grouped_data, composite_data=None, fast_composite_dat
         """
         for row in data['details']:
             latest_date_str = row.get('latest_date', 'N/A')
-            f_latest = row['format'].replace('{value}', f"{row['latest_val']:.2f}") if row['latest_val'] is not None else 'N/A'
-            f_delta = f"{row['delta']:+.2f}"
+            decimals = row.get('decimals', 2)
+            f_latest = row['format'].replace('{value}', f"{row['latest_val']:.{decimals}f}") if row['latest_val'] is not None else 'N/A'
+            f_delta = f"{row['delta']:+.{decimals}f}"
             
             # 兼容 Fast 指標與標準指標的基準顯示
             if 'compare_label' in row:
@@ -520,12 +562,15 @@ def generate_combined_html(grouped_data, composite_data=None, fast_composite_dat
                 base_val = row.get('prev_val')
                 label = "前次值"
             
-            f_base = row['format'].replace('{value}', f"{base_val:.2f}") if base_val is not None else 'N/A'
+            f_base = row['format'].replace('{value}', f"{base_val:.{decimals}f}") if base_val is not None else 'N/A'
+            
+            # 處理強度標籤
+            intensity_str = f"({row['intensity'].split(' ')[0]}) " if row.get('intensity') and row['status'] in ['favorable', 'unfavorable'] else ""
             
             if row['status'] == 'favorable':
-                st_text = '🟢 有利'; st_class = 'status-favorable'
+                st_text = f'🟢 {intensity_str}有利'; st_class = 'status-favorable'
             elif row['status'] == 'unfavorable':
-                st_text = '🔴 不利'; st_class = 'status-unfavorable'
+                st_text = f'🔴 {intensity_str}不利'; st_class = 'status-unfavorable'
             elif row['status'] == 'neutral':
                 st_text = '⚪ 不計分'; st_class = 'status-neutral'
             else:
