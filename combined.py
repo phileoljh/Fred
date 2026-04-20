@@ -463,9 +463,9 @@ def get_fast_composite_index(as_of_date=None, cache=None):
         'details': details
     }
 
-def get_history_indices(days=365):
+def get_history_indices(days=540):
     """
-    生成過去一年的歷史得分序列。
+    生成過去 18 個月的歷史得分序列。
     """
     cache = get_all_obs_cache()
     end_date = datetime.now()
@@ -475,6 +475,7 @@ def get_history_indices(days=365):
     macro_scores = []
     fast_scores = []
     sp500_values = []
+    vix_values = []
     
     curr = start_date
     while curr <= end_date:
@@ -492,14 +493,19 @@ def get_history_indices(days=365):
         sp_data = get_as_of_data(cache, 'SP500', d_str, limit=1)
         sp500_values.append(sp_data[0][1] if sp_data else None)
         
+        # 獲取 VIX 原始數值
+        vix_data = get_as_of_data(cache, 'VIXCLS', d_str, limit=1)
+        vix_values.append(vix_data[0][1] if vix_data else None)
+        
         curr += timedelta(days=1)
         
     return {
         'labels': dates,
         'datasets': [
-            {'label': 'Macro Index (宏觀)', 'data': macro_scores, 'borderColor': '#58a6ff', 'yAxisID': 'y'},
-            {'label': 'Fast Index (快速)', 'data': fast_scores, 'borderColor': '#3fb950', 'yAxisID': 'y'},
-            {'label': 'S&P 500 (右軸)', 'data': sp500_values, 'borderColor': '#d29922', 'yAxisID': 'y2'}
+            {'label': 'Macro Index (宏觀)', 'data': macro_scores, 'borderColor': '#58a6ff', 'yAxisID': 'y', 'hidden': True},
+            {'label': 'Fast Index (快速)', 'data': fast_scores, 'borderColor': '#3fb950', 'yAxisID': 'y', 'hidden': True},
+            {'label': 'VIX 指標 (右軸2)', 'data': vix_values, 'borderColor': '#a371f7', 'yAxisID': 'y3'},
+            {'label': 'S&P 500 (右軸1)', 'data': sp500_values, 'borderColor': '#d29922', 'yAxisID': 'y2'}
         ]
     }
 
@@ -671,25 +677,25 @@ def generate_combined_html(grouped_data, composite_data=None, fast_composite_dat
         """
         return html
 
-    # 先渲染快速指標，再渲染標準指標
-    html_template += render_index_card(
-        fast_composite_data, 
-        "快速經濟指標 (Fast Index)", 
-        "目前評分：+10 (完全樂觀) ~ -10 (完全悲觀) <br/> 基於日報(三日均線)與週報指標之即時反饋"
-    )
-    
-    html_template += render_index_card(
-        composite_data, 
-        "經濟綜合指標 (Macro Index)", 
-        "目前評分：+10 (完全樂觀) ~ -10 (完全悲觀) <br/> 基於四大經濟板塊之月報/季報趨勢分析"
-    )
+    # 先渲染快速指標，再渲染標準指標 (預設隱藏，因為還不準)
+    html_template += f"""
+        <details style="margin-bottom: 20px; border: 1px dashed var(--border-color); border-radius: 12px; padding: 10px;">
+            <summary style="cursor: pointer; color: var(--text-muted); text-align: center; font-weight: bold;">
+                ⚠️ 實驗性指標：快速經濟指標 & 經濟綜合指標 (目前數據不準確，點擊展開)
+            </summary>
+            <div style="margin-top: 20px;">
+                {render_index_card(fast_composite_data, "快速經濟指標 (Fast Index)", "目前評分：+10 (完全樂觀) ~ -10 (完全悲觀) <br/> 基於日報(三日均線)與週報指標之即時反饋")}
+                {render_index_card(composite_data, "經濟綜合指標 (Macro Index)", "目前評分：+10 (完全樂觀) ~ -10 (完全悲觀) <br/> 基於四大經濟板塊之月報/季報趨勢分析")}
+            </div>
+        </details>
+    """
 
     if history_data:
         html_template += f"""
             <div class="composite-card">
                 <div class="card-title">經濟情緒歷史趨勢 (Economic Sentiment History)</div>
                 <div style="text-align: center; color: var(--text-muted); margin-bottom: 20px;">
-                    過去 365 天 Macro 與 Fast 指標的動態變化
+                    過去 18 個月 Macro、Fast 指標與 VIX 的動態變化
                 </div>
                 <div class="chart-container" style="height: 400px;">
                     <canvas id="history_chart"></canvas>
@@ -758,6 +764,13 @@ def generate_combined_html(grouped_data, composite_data=None, fast_composite_dat
                                     title: { display: true, text: 'S&P 500 Index', color: '#d29922' },
                                     ticks: { color: '#d29922' },
                                     grid: { display: false }
+                                },
+                                y3: {
+                                    type: 'linear', position: 'right',
+                                    title: { display: true, text: 'VIX Index', color: '#a371f7' },
+                                    ticks: { color: '#a371f7' },
+                                    grid: { display: false },
+                                    // 將 y3 放在 y2 的內側或外側，此處 Chart.js 會自動排開
                                 }
                             }
                         }
