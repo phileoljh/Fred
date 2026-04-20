@@ -78,9 +78,9 @@ INDICATORS = [
     {"id": "PPIFES", "name": "核心生產者物價指數 (Core PPI)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
     {"id": "CES0500000003", "name": "平均每小時薪資 (Average Hourly Earnings)", "freq": "Monthly", "category": "Labor Market", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
     {"id": "RTWEXBGS", "name": "實質廣義美元指數 (Real Broad Dollar Index)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "lin", "format": "{value} pts", "points": 12, "true_freq": "monthly"},
-    {"id": "PERMIT", "name": "營建許可 (Building Permits)", "freq": "Monthly", "category": "GDP Output", "units": "lin", "format": "{value}K", "points": 12, "true_freq": "monthly", "decimals": 0},
-    {"id": "HOUST", "name": "新屋開工 (Housing Starts)", "freq": "Monthly", "category": "GDP Output", "units": "lin", "format": "{value}K", "points": 12, "true_freq": "monthly", "decimals": 0},
-    {"id": "EXHOSLUSM495S", "name": "成屋銷售 (Existing Home Sales)", "freq": "Monthly", "category": "GDP Output", "units": "lin", "format": "{value}M", "points": 12, "true_freq": "monthly", "scale": 1000000, "decimals": 2},
+    {"id": "PERMIT", "name": "營建許可 (Building Permits)", "freq": "Monthly", "category": "GDP Output", "units": "lin", "format": "{value}M", "points": 12, "true_freq": "monthly", "scale": 1000, "decimals": 3},
+    {"id": "HOUST", "name": "新屋開工 (Housing Starts)", "freq": "Monthly", "category": "GDP Output", "units": "lin", "format": "{value}M", "points": 12, "true_freq": "monthly", "scale": 1000, "decimals": 3},
+    {"id": "EXHOSLUSM495S", "name": "成屋銷售 (Existing Home Sales)", "freq": "Monthly", "category": "GDP Output", "units": "lin", "format": "{value}M", "points": 12, "true_freq": "monthly", "scale": 1000000, "decimals": 3},
     
     # Quarterly (1 Year = 4 points)
     {"id": "GDPC1", "name": "實質國內生產毛額 (Real GDP)", "freq": "Quarterly", "category": "GDP Output", "units": "pca", "format": "{value}% SAAR", "points": 4, "true_freq": "quarterly"},
@@ -110,7 +110,7 @@ CHART_GROUPS = [
     {"name": "核心通膨對比 (Core Inflation: PCE vs. PPI)", "members": ["PCEPILFE", "PPIFES"]},
     {"name": "殖利率曲線對比 (Yield Curve Comparison)", "members": ["T10Y2Y", "T10Y3M"]},
     {"name": "生產流水線動能 (Manufacturing Pipeline)", "members": ["NEWORDER", "INDPRO", "BUSINV"]},
-    {"name": "房地產熱度對比 (Housing Market Activity)", "members": ["HOUST", "EXHOSLUSM495S"]},
+    {"name": "房地產熱度對比 (Housing Market Activity)", "members": ["PERMIT","HOUST", "EXHOSLUSM495S"]},
 ]
 
 # ==========================================

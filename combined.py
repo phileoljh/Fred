@@ -92,7 +92,7 @@ def get_grouped_data():
             if unify_to_m and 'K' in fmt:
                 scale_adjust = 1000.0
                 fmt = fmt.replace('K', 'M')
-                decimals = 2
+                decimals = 3
                 name += " (M)" # Add unit suffix to legend to be clear
             
             for d in sorted_dates:
@@ -215,7 +215,7 @@ def get_composite_index():
                 prev_date = results['WALCL'][1][1]
                 
                 if latest_val is None or prev_val is None: continue
-                meta = {"name": "市場淨流動性 (Net Liquidity)", "format": "{value}T"}
+                meta = {"name": "市場淨流動性 (Net Liquidity)", "format": "{value}T", "decimals": 3}
             else:
                 c = conn.cursor()
                 c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT 2", (ind_id,))
@@ -347,11 +347,12 @@ def get_fast_composite_index():
                     except: return None
 
                 latest_val = get_net_liq_val(0)
+                baseline_val = get_net_liq_val(1)
+                if latest_val is None or baseline_val is None: continue
                 latest_date = results['WALCL'][0][1]
-                baseline_val = get_net_liq_val(1) # 週更邏輯：對比前週值
                 compare_label = "前次值"
                 # 強制使用手動元數據以匹配合成結果
-                meta = {"name": "市場淨流動性 (Net Liquidity)", "format": "{value}T", "decimals": 2}
+                meta = {"name": "市場淨流動性 (Net Liquidity)", "format": "{value}T", "decimals": 3}
                 
             else:
                 # 2. 處理一般指標：區分頻率並執行數值縮放 (Scale)
