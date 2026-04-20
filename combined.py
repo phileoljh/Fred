@@ -4,6 +4,8 @@ import json
 import os
 from datetime import datetime
 from config import DB_PATH, INDICATORS, CHART_GROUPS, MACRO_SCORE_MODEL, FAST_MACRO_SCORE_MODEL, COMBINED_HTML_PATH, FAST_SCORE_TIERS, MACRO_SCORE_TIERS
+from datetime import timedelta
+import bisect
 
 # ==========================================
 # 綜合對比分析腳本 (Standalone Comparative Analysis)
@@ -121,6 +123,70 @@ def get_grouped_data():
     return grouped_data
 
 # ==========================================
+# 數據預處理 (Data Pre-processing for Backtesting)
+# ==========================================
+
+def get_all_obs_cache():
+    """
+    預取所有指標的歷史數據，提升回測效能。
+    回傳: { series_id: [ (date, value), ... ] } (按日期升序)
+    """
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT series_id, date, value FROM observations ORDER BY date ASC")
+    rows = c.fetchall()
+    conn.close()
+    
+    cache = {}
+    for sid, d, v in rows:
+        if sid not in cache: cache[sid] = []
+        try:
+            cache[sid].append((d, float(v)))
+        except: pass
+    return cache
+
+def get_as_of_data(cache, series_id, as_of_date, limit=2):
+    """
+    從快取中獲取指定日期之前的最新 N 筆數據。
+    """
+    if series_id not in cache: return []
+    data = cache[series_id]
+    
+    # 使用 bisect 快速定位
+    idx = bisect.bisect_right(data, (as_of_date, float('inf')))
+    if idx == 0: return []
+    
+    # 擷取截點之前的數據並反轉（最新的在前面）
+    return data[max(0, idx-limit):idx][::-1]
+
+def get_net_liquidity_at(cache, as_of_date, limit=2):
+    """
+    合成 Point-in-Time 的市場淨流動性。
+    Net Liq (T) = WALCL(M)/1M - TGA(M)/1M - RRP(B)/1K
+    """
+    results = {}
+    for cid in ['WALCL', 'WTREGEN', 'RRPONTSYD']:
+        rows = get_as_of_data(cache, cid, as_of_date, limit=limit)
+        if rows: results[cid] = rows
+    
+    if len(results.get('WALCL', [])) < 1: return []
+    
+    history = []
+    for i in range(min(limit, len(results['WALCL']))):
+        try:
+            v_a = results['WALCL'][i][1]
+            d_a = results['WALCL'][i][0]
+            # TGA/RRP 找最接近該資產負債表日期的數值
+            v_t = get_as_of_data(cache, 'WTREGEN', d_a, limit=1)
+            v_r = get_as_of_data(cache, 'RRPONTSYD', d_a, limit=1)
+            
+            if v_t and v_r:
+                val = (v_a / 1000000.0) - (v_t[0][1] / 1000000.0) - (v_r[0][1] / 1000.0)
+                history.append((d_a, val))
+        except: pass
+    return history
+
+# ==========================================
 # CORE SCORING LOGIC (Tiered Impact)
 # ==========================================
 
@@ -161,13 +227,16 @@ def get_tiered_impact(delta, baseline_val, tiers, is_rate_or_spread=False):
             
     return target_multiplier, target_label
 
-def get_composite_index():
+def get_composite_index(as_of_date=None, cache=None):
     """
-    計算綜合指標 (雙層權重架構)，分數區間落在 +10 到 -10 之間。
-    - 第一層：大類板塊權重 (如 0.30, 0.25)
-    - 第二層：板塊內部子權重 (如 4, 3, 2, 0 為不計分)
+    計算綜合指標 (雙層權重架構)。
+    若提供 as_of_date，則計算回測得分。
     """
-    conn = sqlite3.connect(DB_PATH)
+    if as_of_date is None:
+        as_of_date = datetime.now().strftime('%Y-%m-%d')
+    
+    if cache is None:
+        cache = get_all_obs_cache()
     
     # 建構 meta_lookup
     meta_lookup = {item['id']: item for item in INDICATORS}
@@ -187,48 +256,20 @@ def get_composite_index():
         for ind_id, ind_info in cat_data["indicators"].items():
             meta = meta_lookup.get(ind_id, {})
             
-            # Virtual Indicator Handling: NET_LIQUIDITY
+            # Indicator Data Fetching
             if ind_id == 'NET_LIQUIDITY':
-                # Synthesize from WALCL, WTREGEN, RRPONTSYD
-                c = conn.cursor()
-                results = {}
-                for cid in ['WALCL', 'WTREGEN', 'RRPONTSYD']:
-                    c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT 2", (cid,))
-                    rows = c.fetchall()
-                    if rows: results[cid] = rows
-                
-                if len(results.get('WALCL', [])) < 2: continue
-                
-                # Get latest and prev for all
-                def get_net_liq(idx):
-                    try:
-                        v_a = float(results['WALCL'][idx][0])
-                        v_t = float(results['WTREGEN'][idx][0]) if len(results.get('WTREGEN', [])) > idx else float(results['WTREGEN'][0][0])
-                        v_r = float(results['RRPONTSYD'][idx][0]) if len(results.get('RRPONTSYD', [])) > idx else float(results['RRPONTSYD'][0][0])
-                        # Net Liq (T) = Assets(M)/1M - TGA(M)/1M - RRP(B)/1K
-                        return (v_a / 1000000.0) - (v_t / 1000000.0) - (v_r / 1000.0)
-                    except: return None
-                
-                latest_val = get_net_liq(0)
-                prev_val = get_net_liq(1)
-                latest_date = results['WALCL'][0][1]
-                prev_date = results['WALCL'][1][1]
-                
-                if latest_val is None or prev_val is None: continue
+                rows = get_net_liquidity_at(cache, as_of_date, limit=2)
+                if len(rows) < 2: continue
+                latest_val, latest_date = rows[0][1], rows[0][0]
+                prev_val, prev_date = rows[1][1], rows[1][0]
                 meta = {"name": "市場淨流動性 (Net Liquidity)", "format": "{value}T", "decimals": 3}
             else:
-                c = conn.cursor()
-                c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT 2", (ind_id,))
-                rows = c.fetchall()
+                rows = get_as_of_data(cache, ind_id, as_of_date, limit=2)
+                if len(rows) < 2: continue
                 
-                if len(rows) < 2:
-                    continue
-                    
                 scale = meta.get('scale', 1)
-                latest_val = float(rows[0][0]) / scale
-                latest_date = rows[0][1]
-                prev_val = float(rows[1][0]) / scale
-                prev_date = rows[1][1]
+                latest_val, latest_date = rows[0][1] / scale, rows[0][0]
+                prev_val, prev_date = rows[1][1] / scale, rows[1][0]
             
             delta = latest_val - prev_val
             polarity = ind_info.get("polarity", "neutral")
@@ -297,20 +338,21 @@ def get_composite_index():
             
         total_final_score += (cat_score_ratio * cat_weight) * 10
 
-    conn.close()
-    
     return {
         'score': total_final_score,
         'details': details
     }
 
-def get_fast_composite_index():
+def get_fast_composite_index(as_of_date=None, cache=None):
     """
-    針對高頻指標（日報、週報）的快速評分模型。
-    - 週報 (Weekly): 對比「前一次」數值。
-    - 日報 (Daily): 對比「前三次有效數值之算術平均」。
+    針對高頻指標的快速評分模型 (Point-in-Time)。
     """
-    conn = sqlite3.connect(DB_PATH)
+    if as_of_date is None:
+        as_of_date = datetime.now().strftime('%Y-%m-%d')
+    
+    if cache is None:
+        cache = get_all_obs_cache()
+
     meta_lookup = {item['id']: item for item in INDICATORS}
     
     total_final_score = 0
@@ -326,57 +368,30 @@ def get_fast_composite_index():
         
         for ind_id, ind_info in cat_data["indicators"].items():
             meta = meta_lookup.get(ind_id, {})
-            c = conn.cursor()
             
-            # 1. 處理虛擬合成指標: NET_LIQUIDITY (市場淨流動性)
+            # 1. 處理虛擬合成指標: NET_LIQUIDITY
             if ind_id == 'NET_LIQUIDITY':
-                results = {}
-                for cid in ['WALCL', 'WTREGEN', 'RRPONTSYD']:
-                    c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT 5", (cid,))
-                    results[cid] = c.fetchall()
-                
-                if len(results.get('WALCL', [])) < 2: continue
-                
-                # 合成運算: 兆 (T) = Assets(M)/1M - TGA(M)/1M - RRP(B)/1K
-                def get_net_liq_val(idx):
-                    try:
-                        v_a = float(results['WALCL'][idx][0])
-                        v_t = float(results['WTREGEN'][idx][0]) if len(results.get('WTREGEN', [])) > idx else float(results['WTREGEN'][0][0])
-                        v_r = float(results['RRPONTSYD'][idx][0]) if len(results.get('RRPONTSYD', [])) > idx else float(results['RRPONTSYD'][0][0])
-                        return (v_a / 1000000.0) - (v_t / 1000000.0) - (v_r / 1000.0)
-                    except: return None
-
-                latest_val = get_net_liq_val(0)
-                baseline_val = get_net_liq_val(1)
-                if latest_val is None or baseline_val is None: continue
-                latest_date = results['WALCL'][0][1]
-                compare_label = "前次值"
-                # 強制使用手動元數據以匹配合成結果
+                rows = get_net_liquidity_at(cache, as_of_date, limit=2)
+                if len(rows) < 2: continue
+                latest_val, latest_date = rows[0][1], rows[0][0]
+                baseline_val, compare_label = rows[1][1], "前次值"
                 meta = {"name": "市場淨流動性 (Net Liquidity)", "format": "{value}T", "decimals": 3}
                 
             else:
-                # 2. 處理一般指標：區分頻率並執行數值縮放 (Scale)
                 true_freq = meta.get('true_freq', 'weekly')
                 scale = meta.get('scale', 1)
                 
                 if true_freq == 'daily':
-                    # 日報指標：抓取 4 筆觀察值，以計算「前 3 日均值」作為基準
-                    c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT 4", (ind_id,))
-                    rows = c.fetchall()
+                    rows = get_as_of_data(cache, ind_id, as_of_date, limit=4)
                     if len(rows) < 4: continue
-                    latest_val = float(rows[0][0]) / scale
-                    latest_date = rows[0][1]
-                    baseline_val = sum(float(r[0]) for r in rows[1:]) / (3 * scale)
+                    latest_val, latest_date = rows[0][1] / scale, rows[0][0]
+                    baseline_val = sum(r[1] for r in rows[1:]) / (3 * scale)
                     compare_label = "3日均值"
                 else:
-                    # 週報指標：抓取 2 筆，對比前次值
-                    c.execute("SELECT value, date FROM observations WHERE series_id=? ORDER BY date DESC LIMIT 2", (ind_id,))
-                    rows = c.fetchall()
+                    rows = get_as_of_data(cache, ind_id, as_of_date, limit=2)
                     if len(rows) < 2: continue
-                    latest_val = float(rows[0][0]) / scale
-                    latest_date = rows[0][1]
-                    baseline_val = float(rows[1][0]) / scale
-                    compare_label = "前次值"
+                    latest_val, latest_date = rows[0][1] / scale, rows[0][0]
+                    baseline_val, compare_label = rows[1][1] / scale, "前次值"
             
             polarity = ind_info.get("polarity", "neutral")
             sub_weight = ind_info.get("sub_weight", 0)
@@ -443,13 +458,46 @@ def get_fast_composite_index():
             
         total_final_score += (cat_score_ratio * cat_weight) * 10
 
-    conn.close()
     return {
         'score': total_final_score,
         'details': details
     }
 
-def generate_combined_html(grouped_data, composite_data=None, fast_composite_data=None):
+def get_history_indices(days=365):
+    """
+    生成過去一年的歷史得分序列。
+    """
+    cache = get_all_obs_cache()
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days)
+    
+    dates = []
+    macro_scores = []
+    fast_scores = []
+    
+    curr = start_date
+    while curr <= end_date:
+        d_str = curr.strftime('%Y-%m-%d')
+        dates.append(d_str)
+        
+        # 計算該時點的得分
+        macro_res = get_composite_index(as_of_date=d_str, cache=cache)
+        fast_res = get_fast_composite_index(as_of_date=d_str, cache=cache)
+        
+        macro_scores.append(round(macro_res['score'], 2))
+        fast_scores.append(round(fast_res['score'], 2))
+        
+        curr += timedelta(days=1)
+        
+    return {
+        'labels': dates,
+        'datasets': [
+            {'label': 'Macro Index (宏觀)', 'data': macro_scores, 'borderColor': '#58a6ff', 'fill': False},
+            {'label': 'Fast Index (快速)', 'data': fast_scores, 'borderColor': '#3fb950', 'fill': False}
+        ]
+    }
+
+def generate_combined_html(grouped_data, composite_data=None, fast_composite_data=None, history_data=None):
     html_template = f"""
     <!DOCTYPE html>
     <html lang="zh-TW">
@@ -630,6 +678,19 @@ def generate_combined_html(grouped_data, composite_data=None, fast_composite_dat
         "目前評分：+10 (完全樂觀) ~ -10 (完全悲觀) <br/> 基於四大經濟板塊之月報/季報趨勢分析"
     )
 
+    if history_data:
+        html_template += f"""
+            <div class="composite-card">
+                <div class="card-title">經濟情緒歷史趨勢 (Economic Sentiment History)</div>
+                <div style="text-align: center; color: var(--text-muted); margin-bottom: 20px;">
+                    過去 365 天 Macro 與 Fast 指標的動態變化
+                </div>
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="history_chart"></canvas>
+                </div>
+            </div>
+        """
+
     html_template += """
             <div class="grid">
     """
@@ -648,6 +709,43 @@ def generate_combined_html(grouped_data, composite_data=None, fast_composite_dat
             </div>
         </div>
         <script>
+            const historyData = """ + json.dumps(history_data) + """;
+            if (historyData) {
+                new Chart(document.getElementById('history_chart'), {
+                    type: 'line',
+                    data: {
+                        labels: historyData.labels,
+                        datasets: historyData.datasets.map(ds => ({
+                            ...ds,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            tension: 0.2
+                        }))
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { labels: { color: '#c9d1d9' } },
+                            tooltip: {
+                                backgroundColor: 'rgba(22, 27, 34, 0.9)',
+                                bodyColor: '#c9d1d9'
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: '#8b949e', maxRotation: 45, minRotation: 45 }, grid: { display: false } },
+                            y: { 
+                                ticks: { color: '#8b949e' }, 
+                                grid: { color: '#30363d' },
+                                min: -10, max: 10
+                            }
+                        }
+                    }
+                });
+            }
+
             const config = """ + json.dumps(grouped_data) + """;
             config.forEach(group => {
                 const ctx = document.getElementById(group.chart_id);
@@ -712,6 +810,8 @@ if __name__ == "__main__":
         comp_macro = get_composite_index()
         print("Calculating fast index...")
         comp_fast = get_fast_composite_index()
+        print("Generating historical timeline (this may take a moment)...")
+        history_data = get_history_indices(days=547)
         print(f"Generating {OUTPUT_PATH}...")
-        generate_combined_html(data, composite_data=comp_macro, fast_composite_data=comp_fast)
+        generate_combined_html(data, composite_data=comp_macro, fast_composite_data=comp_fast, history_data=history_data)
         print("Done!")
