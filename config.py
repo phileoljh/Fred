@@ -149,7 +149,7 @@ MACRO_SCORE_TIERS = [
 MACRO_SCORE_MODEL = {
     "Liquidity_and_Credit": {
         "name": "流動性與信用風險",
-        "weight": 0.40,
+        "weight": 0.30,
         "indicators": {
             "NET_LIQUIDITY": {"polarity": "positive", "sub_weight": 0.4},  # 市場淨流動性 (合成指標)
             "WALCL": {"polarity": "positive", "sub_weight": 0.0},         # 已併入淨流動性
@@ -174,7 +174,7 @@ MACRO_SCORE_MODEL = {
     },
     "Labor_Market": {
         "name": "勞動力市場",
-        "weight": 0.20,
+        "weight": 0.25,
         "indicators": {
             "ICSA": {"polarity": "negative", "sub_weight": 0.4},          # 初領失業金
             "PAYEMS": {"polarity": "positive", "sub_weight": 0.3},        # 非農就業
@@ -189,7 +189,7 @@ MACRO_SCORE_MODEL = {
     },
     "GDP_and_Consumption": {
         "name": "經濟產出與消費",
-        "weight": 0.15,
+        "weight": 0.20,
         "indicators": {
             "RSXFS": {"polarity": "positive", "sub_weight": 0.4},         # 零售銷售
             "GDPC1": {"polarity": "positive", "sub_weight": 0.2},         # 實質GDP

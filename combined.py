@@ -499,7 +499,7 @@ def get_history_indices(days=365):
         'datasets': [
             {'label': 'Macro Index (宏觀)', 'data': macro_scores, 'borderColor': '#58a6ff', 'yAxisID': 'y'},
             {'label': 'Fast Index (快速)', 'data': fast_scores, 'borderColor': '#3fb950', 'yAxisID': 'y'},
-            {'label': 'S&P 500 (右軸)', 'data': sp500_values, 'borderColor': '#d29922', 'borderDash': [5, 5], 'yAxisID': 'y2'}
+            {'label': 'S&P 500 (右軸)', 'data': sp500_values, 'borderColor': '#d29922', 'yAxisID': 'y2'}
         ]
     }
 
