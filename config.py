@@ -96,6 +96,9 @@ INDICATORS = [
     {"id": "WTREGEN", "name": "財政部一般帳戶 (TGA Balance)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}B", "points": 14, "true_freq": "weekly", "scale": 1000, "decimals": 2},
     {"id": "RRPONTSYD", "name": "隔夜逆回購 (Reverse Repo)", "freq": "Daily", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}B", "points": 30, "true_freq": "daily", "scale": 1, "decimals": 2},
     {"id": "M2SL", "name": "M2 貨幣供給量 (M2 Money Supply)", "freq": "Monthly", "category": "Liquidity & Money Supply", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly", "decimals": 2},
+    
+    # Benchmarks (No Score)
+    {"id": "SP500", "name": "S&P 500 指數 (SP500)", "freq": "Daily", "category": "Market Benchmark", "units": "lin", "format": "{value}", "points": 30, "true_freq": "daily", "decimals": 2},
 ]
 
 # ==========================================
@@ -146,7 +149,7 @@ MACRO_SCORE_TIERS = [
 MACRO_SCORE_MODEL = {
     "Liquidity_and_Credit": {
         "name": "流動性與信用風險",
-        "weight": 0.30,
+        "weight": 0.40,
         "indicators": {
             "NET_LIQUIDITY": {"polarity": "positive", "sub_weight": 0.4},  # 市場淨流動性 (合成指標)
             "WALCL": {"polarity": "positive", "sub_weight": 0.0},         # 已併入淨流動性
@@ -171,7 +174,7 @@ MACRO_SCORE_MODEL = {
     },
     "Labor_Market": {
         "name": "勞動力市場",
-        "weight": 0.25,
+        "weight": 0.20,
         "indicators": {
             "ICSA": {"polarity": "negative", "sub_weight": 0.4},          # 初領失業金
             "PAYEMS": {"polarity": "positive", "sub_weight": 0.3},        # 非農就業
@@ -186,7 +189,7 @@ MACRO_SCORE_MODEL = {
     },
     "GDP_and_Consumption": {
         "name": "經濟產出與消費",
-        "weight": 0.20,
+        "weight": 0.15,
         "indicators": {
             "RSXFS": {"polarity": "positive", "sub_weight": 0.4},         # 零售銷售
             "GDPC1": {"polarity": "positive", "sub_weight": 0.2},         # 實質GDP

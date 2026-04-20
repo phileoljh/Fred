@@ -474,6 +474,7 @@ def get_history_indices(days=365):
     dates = []
     macro_scores = []
     fast_scores = []
+    sp500_values = []
     
     curr = start_date
     while curr <= end_date:
@@ -487,13 +488,18 @@ def get_history_indices(days=365):
         macro_scores.append(round(macro_res['score'], 2))
         fast_scores.append(round(fast_res['score'], 2))
         
+        # 獲取 SP500 原始數值 (絕對價)
+        sp_data = get_as_of_data(cache, 'SP500', d_str, limit=1)
+        sp500_values.append(sp_data[0][1] if sp_data else None)
+        
         curr += timedelta(days=1)
         
     return {
         'labels': dates,
         'datasets': [
-            {'label': 'Macro Index (宏觀)', 'data': macro_scores, 'borderColor': '#58a6ff', 'fill': False},
-            {'label': 'Fast Index (快速)', 'data': fast_scores, 'borderColor': '#3fb950', 'fill': False}
+            {'label': 'Macro Index (宏觀)', 'data': macro_scores, 'borderColor': '#58a6ff', 'yAxisID': 'y'},
+            {'label': 'Fast Index (快速)', 'data': fast_scores, 'borderColor': '#3fb950', 'yAxisID': 'y'},
+            {'label': 'S&P 500 (右軸)', 'data': sp500_values, 'borderColor': '#d29922', 'borderDash': [5, 5], 'yAxisID': 'y2'}
         ]
     }
 
@@ -709,88 +715,108 @@ def generate_combined_html(grouped_data, composite_data=None, fast_composite_dat
             </div>
         </div>
         <script>
-            const historyData = """ + json.dumps(history_data) + """;
-            if (historyData) {
-                new Chart(document.getElementById('history_chart'), {
-                    type: 'line',
-                    data: {
-                        labels: historyData.labels,
-                        datasets: historyData.datasets.map(ds => ({
-                            ...ds,
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            pointHoverRadius: 5,
-                            tension: 0.2
-                        }))
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { labels: { color: '#c9d1d9' } },
-                            tooltip: {
-                                backgroundColor: 'rgba(22, 27, 34, 0.9)',
-                                bodyColor: '#c9d1d9'
-                            }
+            // 1. 渲染歷史趨勢圖
+            (function() {
+                const historyData = """ + json.dumps(history_data, allow_nan=False) + """;
+                const ctx = document.getElementById('history_chart');
+                if (historyData && ctx) {
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: historyData.labels,
+                            datasets: historyData.datasets.map(ds => {
+                                const newDs = Object.assign({}, ds);
+                                newDs.borderWidth = 2;
+                                newDs.pointRadius = 0;
+                                newDs.pointHoverRadius = 5;
+                                newDs.tension = 0.2;
+                                return newDs;
+                            })
                         },
-                        scales: {
-                            x: { ticks: { color: '#8b949e', maxRotation: 45, minRotation: 45 }, grid: { display: false } },
-                            y: { 
-                                ticks: { color: '#8b949e' }, 
-                                grid: { color: '#30363d' },
-                                min: -10, max: 10
-                            }
-                        }
-                    }
-                });
-            }
-
-            const config = """ + json.dumps(grouped_data) + """;
-            config.forEach(group => {
-                const ctx = document.getElementById(group.chart_id);
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: group.labels,
-                        datasets: group.datasets.map(ds => ({
-                            label: ds.label,
-                            data: ds.data,
-                            borderColor: ds.borderColor,
-                            backgroundColor: 'transparent',
-                            borderWidth: group.labels.length > 50 ? 2 : 3,
-                            pointRadius: group.labels.length > 50 ? 0 : 2,
-                            pointHoverRadius: 4,
-                            tension: 0.3,
-                            spanGaps: true
-                        }))
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { labels: { color: '#c9d1d9' } },
-                            tooltip: {
-                                backgroundColor: 'rgba(22, 27, 34, 0.9)',
-                                bodyColor: '#c9d1d9',
-                                callbacks: {
-                                    label: function(context) {
-                                        const ds = group.datasets[context.datasetIndex];
-                                        const val = context.parsed.y;
-                                        if (val === null) return ds.label + ': N/A';
-                                        return ds.label + ': ' + ds.format.replace('{value}', val.toFixed(ds.decimals));
-                                    }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                legend: { labels: { color: '#c9d1d9' } },
+                                tooltip: {
+                                    backgroundColor: 'rgba(22, 27, 34, 0.9)',
+                                    bodyColor: '#c9d1d9'
+                                }
+                            },
+                            scales: {
+                                x: { ticks: { color: '#8b949e', maxRotation: 45, minRotation: 45 }, grid: { display: false } },
+                                y: { 
+                                    type: 'linear', position: 'left',
+                                    title: { display: true, text: '情緒指標分數', color: '#8b949e' },
+                                    ticks: { color: '#8b949e' }, 
+                                    grid: { color: '#30363d' },
+                                    min: -10, max: 10
+                                },
+                                y2: {
+                                    type: 'linear', position: 'right',
+                                    title: { display: true, text: 'S&P 500 Index', color: '#d29922' },
+                                    ticks: { color: '#d29922' },
+                                    grid: { display: false }
                                 }
                             }
-                        },
-                        scales: {
-                            x: { ticks: { color: '#8b949e' }, grid: { display: false } },
-                            y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
                         }
-                    }
-                });
-            });
+                    });
+                }
+            })();
+
+            // 2. 渲染各版塊詳細圖表
+            (function() {
+                const config = """ + json.dumps(grouped_data, allow_nan=False) + """;
+                if (config && Array.isArray(config)) {
+                    config.forEach(group => {
+                        const ctx = document.getElementById(group.chart_id);
+                        if (ctx) {
+                            new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: group.labels,
+                                    datasets: group.datasets.map(ds => ({
+                                        label: ds.label,
+                                        data: ds.data,
+                                        borderColor: ds.borderColor,
+                                        backgroundColor: 'transparent',
+                                        borderWidth: group.labels.length > 50 ? 2 : 3,
+                                        pointRadius: group.labels.length > 50 ? 0 : 2,
+                                        pointHoverRadius: 4,
+                                        tension: 0.3,
+                                        spanGaps: true
+                                    }))
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    interaction: { mode: 'index', intersect: false },
+                                    plugins: {
+                                        legend: { labels: { color: '#c9d1d9' } },
+                                        tooltip: {
+                                            backgroundColor: 'rgba(22, 27, 34, 0.9)',
+                                            bodyColor: '#c9d1d9',
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const ds = group.datasets[context.datasetIndex];
+                                                    const val = context.parsed.y;
+                                                    if (val === null) return ds.label + ': N/A';
+                                                    return ds.label + ': ' + ds.format.replace('{value}', val.toFixed(ds.decimals));
+                                                }
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        x: { ticks: { color: '#8b949e' }, grid: { display: false } },
+                                        y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            })();
         </script>
     </body>
     </html>
