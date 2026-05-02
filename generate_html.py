@@ -875,7 +875,7 @@ def generate_ai_html(data):
       <th>Name</th>
       <th>Value (Released)</th>
       <th>18M Avg / Baseline</th>
-      <th>Frequency</th>
+      <th>Category</th>
     </tr>
   </thead>
   <tbody>
