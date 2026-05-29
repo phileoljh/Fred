@@ -75,8 +75,8 @@ def get_data_for_ui():
     # Insert Net Liquidity
     all_indicators.append(net_liq_info)
     
-    # 強制調整流動性指標順序: [M2SL, NET_LIQUIDITY, WALCL, WTREGEN, RRPONTSYD]
-    liq_order = ["M2SL", "NET_LIQUIDITY", "WALCL", "WTREGEN", "RRPONTSYD"]
+    # 強制調整流動性指標順序: [GFDEBTN, M2SL, NET_LIQUIDITY, WALCL, WTREGEN, RRPONTSYD]
+    liq_order = ["GFDEBTN", "M2SL", "NET_LIQUIDITY", "WALCL", "WTREGEN", "RRPONTSYD"]
     # 先把這些指標從列表中移除
     liq_items = [item for item in all_indicators if item['id'] in liq_order]
     other_items = [item for item in all_indicators if item['id'] not in liq_order]

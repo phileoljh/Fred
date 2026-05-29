@@ -92,6 +92,12 @@ INDICATORS = [
     {"id": "IMPGS", "name": "商品與服務進口 (Imports of Goods & Services)", "freq": "Quarterly", "category": "GDP Output", "units": "pc1", "format": "{value}% YoY", "points": 4, "true_freq": "quarterly"},
 
     # Liquidity & Money Supply
+    # GFDEBTN：美國聯邦政府的總公共債務 (Federal Debt: Total Public Debt)。
+    # 由於 FRED 的原始數值單位為「百萬美元 (Millions of Dollars)」，
+    # 我們設定 scale 為 1,000,000 以將數值轉換成「兆美元 (Trillions)」，
+    # format 設為 "{value}T"，並保留兩位小數。
+    # 該指標的發布頻率為季報 (Quarterly)，在此設定回溯顯示點數為 4 季。
+    {"id": "GFDEBTN", "name": "聯邦債務：總公共債務 (Federal Debt: Total Public Debt)", "freq": "Quarterly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 4, "true_freq": "quarterly", "scale": 1000000, "decimals": 2},
     {"id": "WALCL", "name": "聯準會總資產 (Fed Balance Sheet)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 14, "true_freq": "weekly", "scale": 1000000, "decimals": 2},
     {"id": "WTREGEN", "name": "財政部一般帳戶 (TGA Balance)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}B", "points": 14, "true_freq": "weekly", "scale": 1000, "decimals": 2},
     {"id": "RRPONTSYD", "name": "隔夜逆回購 (Reverse Repo)", "freq": "Daily", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}B", "points": 30, "true_freq": "daily", "scale": 1, "decimals": 2},
