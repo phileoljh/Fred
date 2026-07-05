@@ -75,8 +75,8 @@ def get_data_for_ui():
     # Insert Net Liquidity
     all_indicators.append(net_liq_info)
     
-    # 強制調整流動性指標順序: [GFDEBTN, M2SL, NET_LIQUIDITY, WALCL, WTREGEN, RRPONTSYD]
-    liq_order = ["GFDEBTN", "M2SL", "NET_LIQUIDITY", "WALCL", "WTREGEN", "RRPONTSYD"]
+    # 強制調整流動性指標順序: [GFDEBTN, A091RC1Q027SBEA, FGRECPT, M2SL, NET_LIQUIDITY, WALCL, WTREGEN, RRPONTSYD]
+    liq_order = ["GFDEBTN", "A091RC1Q027SBEA", "FGRECPT", "M2SL", "NET_LIQUIDITY", "WALCL", "WTREGEN", "RRPONTSYD"]
     # 先把這些指標從列表中移除
     liq_items = [item for item in all_indicators if item['id'] in liq_order]
     other_items = [item for item in all_indicators if item['id'] not in liq_order]
@@ -652,7 +652,7 @@ def generate_html(data):
         html_content += '<div class="grid">'
         
         for item in items:
-            link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] != 'SOFR_IORB_SPREAD' else '#'
+            link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] not in ['SOFR_IORB_SPREAD', 'NET_LIQUIDITY'] else '#'
             
             val_color = ""
             if item.get('raw_val') is not None:
@@ -886,7 +886,7 @@ def generate_ai_html(data):
             continue
         
         for item in items:
-            link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] != 'SOFR_IORB_SPREAD' else '#'
+            link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] not in ['SOFR_IORB_SPREAD', 'NET_LIQUIDITY'] else '#'
             raw_baseline = item.get('baseline_display_val', '') or ''
             if raw_baseline.startswith('0.00'):
                 baseline = '0 軸 (Zero Axis)'

@@ -19,6 +19,18 @@ def get_grouped_data():
     
     # Create a lookup for indicator metadata
     meta = {item['id']: item for item in INDICATORS}
+    meta['FED_INTEREST_TO_RECEIPTS_RATIO'] = {
+        "id": "FED_INTEREST_TO_RECEIPTS_RATIO",
+        "name": "聯邦利息支出佔收入比 (Federal Interest to Receipts Ratio)",
+        "freq": "Quarterly",
+        "category": "Liquidity & Money Supply",
+        "units": "lin",
+        "format": "{value}%",
+        "points": 24,
+        "true_freq": "quarterly",
+        "scale": 1,
+        "decimals": 2
+    }
     
     for g_idx, group in enumerate(CHART_GROUPS):
         members = group['members']

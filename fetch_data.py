@@ -100,6 +100,30 @@ def update_data():
                              ('SOFR_IORB_SPREAD', f"{spread:.4f}", date, updated_at))
             except ValueError:
                 pass
+                
+    # Calculate Federal Interest to Receipts ratio historically based on recent intersecting dates
+    c.execute("SELECT date, value FROM observations WHERE series_id='A091RC1Q027SBEA' ORDER BY date DESC LIMIT 400")
+    interest_data = {row[0]: row[1] for row in c.fetchall()}
+    
+    c.execute("SELECT date, value FROM observations WHERE series_id='FGRECPT' ORDER BY date DESC LIMIT 400")
+    receipts_data = {row[0]: row[1] for row in c.fetchall()}
+    
+    for date in interest_data:
+        if date in receipts_data:
+            try:
+                i_val = float(interest_data[date])
+                r_val = float(receipts_data[date])
+                if r_val != 0:
+                    ratio = (i_val / r_val) * 100
+                    c.execute('''INSERT INTO observations (series_id, value, date, updated_at) 
+                                 VALUES (?, ?, ?, ?)
+                                 ON CONFLICT(series_id, date) DO UPDATE SET 
+                                 value=excluded.value
+                                 WHERE observations.value != excluded.value''', 
+                                 ('FED_INTEREST_TO_RECEIPTS_RATIO', f"{ratio:.4f}", date, updated_at))
+            except ValueError:
+                pass
+                
     conn.commit()
     conn.close()
 

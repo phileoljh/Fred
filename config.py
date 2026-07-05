@@ -102,6 +102,8 @@ INDICATORS = [
     {"id": "WTREGEN", "name": "財政部一般帳戶 (TGA Balance)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}B", "points": 14, "true_freq": "weekly", "scale": 1000, "decimals": 2},
     {"id": "RRPONTSYD", "name": "隔夜逆回購 (Reverse Repo)", "freq": "Daily", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}B", "points": 30, "true_freq": "daily", "scale": 1, "decimals": 2},
     {"id": "M2SL", "name": "M2 貨幣供給量 (M2 Money Supply)", "freq": "Monthly", "category": "Liquidity & Money Supply", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly", "decimals": 2},
+    {"id": "FGRECPT", "name": "聯邦財政收入 (Federal Government Current Receipts)", "freq": "Quarterly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 24, "true_freq": "quarterly", "scale": 1000, "decimals": 2},
+    {"id": "A091RC1Q027SBEA", "name": "聯邦利息支出 (Federal Interest Payments)", "freq": "Quarterly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 24, "true_freq": "quarterly", "scale": 1000, "decimals": 2},
     
     # Benchmarks (No Score)
     {"id": "SP500", "name": "S&P 500 指數 (SP500)", "freq": "Daily", "category": "Market Benchmark", "units": "lin", "format": "{value}", "points": 30, "true_freq": "daily", "decimals": 2},
@@ -120,6 +122,7 @@ CHART_GROUPS = [
     {"name": "殖利率曲線對比 (Yield Curve Comparison)", "members": ["T10Y2Y", "T10Y3M"]},
     {"name": "生產流水線動能 (Manufacturing Pipeline)", "members": ["NEWORDER", "INDPRO", "BUSINV"]},
     {"name": "房地產熱度對比 (Housing Market Activity)", "members": ["PERMIT","HOUST", "EXHOSLUSM495S"]},
+    {"name": "聯邦利息支出佔收入比 (Federal Interest to Receipts Ratio)", "members": ["FED_INTEREST_TO_RECEIPTS_RATIO"]},
 ]
 
 # ==========================================
