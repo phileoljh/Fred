@@ -2,7 +2,7 @@ import sqlite3
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import FRED_API_KEY, DB_PATH, INDICATORS
 
 def init_db():
@@ -39,6 +39,65 @@ def fetch_historical_observations(series_id, units, limit=540, session=None):
         print(f"Error fetching {series_id}: {e}")
         return None
     return []
+
+def update_fear_greed(conn, days_back=30, session=None):
+    """
+    Fetch Fear & Greed Index from CNN internal API for a given number of days
+    and write/update the records in the SQLite database.
+    
+    Args:
+        conn (sqlite3.Connection): SQLite connection object.
+        days_back (int): Number of days to look back. Default is 30.
+        session (requests.Session): Optional requests session for retry mechanisms.
+    """
+    c = conn.cursor()
+    today = datetime.now()
+    start_date = today - timedelta(days=days_back)
+    start_date_str = start_date.strftime("%Y-%m-%d")
+    
+    print(f"=== Syncing Fear & Greed Index ===")
+    print(f"Current time: {today.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Start date (back {days_back} days): {start_date_str}")
+    
+    url = f"https://production.dataviz.cnn.io/index/fearandgreed/graphdata/{start_date_str}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    
+    requester = session or requests
+    try:
+        response = requester.get(url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            print(f"Error: Failed to fetch data from CNN API. Status code: {response.status_code}")
+            return False
+            
+        data = response.json()
+        fng_historical = data.get("fear_and_greed_historical")
+        
+        if not fng_historical or not isinstance(fng_historical.get("data"), list):
+            print("Error: Could not find 'fear_and_greed_historical' data points in JSON response.")
+            return False
+            
+        points = fng_historical["data"]
+        updated_at = datetime.now().isoformat()
+        db_success = 0
+        
+        for pt in points:
+            ts = pt.get("x")
+            score = pt.get("y")
+            if ts is not None and score is not None:
+                date_str = datetime.fromtimestamp(ts / 1000.0).strftime("%Y-%m-%d")
+                score_val = f"{float(score):.2f}"
+                c.execute('''INSERT OR REPLACE INTO observations (series_id, value, date, updated_at) 
+                             VALUES (?, ?, ?, ?)''', ('FEAR_GREED_INDEX', score_val, date_str, updated_at))
+                db_success += 1
+                
+        conn.commit()
+        print(f"Successfully wrote/updated database observations count: {db_success}")
+        return True
+    except Exception as e:
+        print(f"Exception occurred while fetching history: {e}")
+        return False
 
 def initialize_database():
     conn = init_db()
@@ -156,7 +215,13 @@ def initialize_database():
                 pass
                 
     conn.commit()
+    
+    # 初始化載入 600 天的貪婪指數歷史數據以與圖表完全對齊
+    print("Initializing Fear & Greed Index history (Limit: 600 days)...")
+    update_fear_greed(conn, days_back=600, session=session)
+    
     conn.close()
+
 
 if __name__ == "__main__":
     print("Initializing Database with 18 months of history...")

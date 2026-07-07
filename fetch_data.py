@@ -5,7 +5,7 @@ from urllib3.util.retry import Retry
 import os
 from datetime import datetime
 from config import FRED_API_KEY, DB_PATH, INDICATORS
-from init_db import init_db, fetch_historical_observations
+from init_db import init_db, fetch_historical_observations, update_fear_greed
 
 def update_data():
     conn = init_db()
@@ -124,6 +124,10 @@ def update_data():
             except ValueError:
                 pass
                 
+        # 每日同步最近 30 天的貪婪指數歷史數據
+        print("Syncing recent Fear & Greed Index (30 days)...")
+        update_fear_greed(conn, days_back=30, session=session)
+        
     conn.commit()
     conn.close()
 

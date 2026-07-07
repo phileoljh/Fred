@@ -68,6 +68,18 @@ def get_data_for_ui():
         "scale": 1,
         "decimals": 2
     }
+    # Custom FEAR_GREED_INDEX indicator info
+    fear_greed_info = {
+        "id": "FEAR_GREED_INDEX",
+        "name": "CNN 貪婪指數 (Fear & Greed Index)",
+        "freq": "Daily",
+        "category": "Consumption & Sentiment",
+        "units": "lin",
+        "format": "{value} pts",
+        "points": 30,
+        "true_freq": "daily",
+        "decimals": 0
+    }
     
     all_indicators = INDICATORS.copy()
     all_indicators.insert(3, spread_info) # Insert after SOFR
@@ -86,6 +98,13 @@ def get_data_for_ui():
     
     # 這裡將流動性指標放在最後（或者您可以根據類別排序邏輯放置）
     all_indicators = other_items + sorted_liq
+    
+    # 尋找第一個分類為 "Consumption & Sentiment" 的指標索引，並插在最前面
+    insert_idx = next((i for i, item in enumerate(all_indicators) if item.get('category') == 'Consumption & Sentiment'), None)
+    if insert_idx is not None:
+        all_indicators.insert(insert_idx, fear_greed_info)
+    else:
+        all_indicators.append(fear_greed_info)
     
     for idx, item in enumerate(all_indicators):
         try:
@@ -652,7 +671,12 @@ def generate_html(data):
         html_content += '<div class="grid">'
         
         for item in items:
-            link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] not in ['SOFR_IORB_SPREAD', 'NET_LIQUIDITY'] else '#'
+            if item['id'] == 'FEAR_GREED_INDEX':
+                link = 'https://www.cnn.com/markets/fear-and-greed'
+            elif item['id'] in ['SOFR_IORB_SPREAD', 'NET_LIQUIDITY']:
+                link = '#'
+            else:
+                link = f"https://fred.stlouisfed.org/series/{item['id']}"
             
             val_color = ""
             if item.get('raw_val') is not None:
@@ -886,7 +910,12 @@ def generate_ai_html(data):
             continue
         
         for item in items:
-            link = f"https://fred.stlouisfed.org/series/{item['id']}" if item['id'] not in ['SOFR_IORB_SPREAD', 'NET_LIQUIDITY'] else '#'
+            if item['id'] == 'FEAR_GREED_INDEX':
+                link = 'https://www.cnn.com/markets/fear-and-greed'
+            elif item['id'] in ['SOFR_IORB_SPREAD', 'NET_LIQUIDITY']:
+                link = '#'
+            else:
+                link = f"https://fred.stlouisfed.org/series/{item['id']}"
             raw_baseline = item.get('baseline_display_val', '') or ''
             if raw_baseline.startswith('0.00'):
                 baseline = '0 軸 (Zero Axis)'

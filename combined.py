@@ -488,6 +488,7 @@ def get_history_indices(days=540):
     fast_scores = []
     sp500_values = []
     vix_values = []
+    fear_greed_values = []
     
     curr = start_date
     while curr <= end_date:
@@ -509,6 +510,10 @@ def get_history_indices(days=540):
         vix_data = get_as_of_data(cache, 'VIXCLS', d_str, limit=1)
         vix_values.append(vix_data[0][1] if vix_data else None)
         
+        # 獲取 貪婪指數 (Fear & Greed Index) 原始數值
+        fg_data = get_as_of_data(cache, 'FEAR_GREED_INDEX', d_str, limit=1)
+        fear_greed_values.append(fg_data[0][1] if fg_data else None)
+        
         curr += timedelta(days=1)
         
     return {
@@ -516,7 +521,8 @@ def get_history_indices(days=540):
         'datasets': [
             {'label': 'Macro Index (宏觀)', 'data': macro_scores, 'borderColor': '#58a6ff', 'yAxisID': 'y', 'hidden': True},
             {'label': 'Fast Index (快速)', 'data': fast_scores, 'borderColor': '#3fb950', 'yAxisID': 'y', 'hidden': True},
-            {'label': 'VIX 指標 (右軸2)', 'data': vix_values, 'borderColor': '#a371f7', 'yAxisID': 'y3'},
+            {'label': 'VIX 指標 (右軸2)', 'data': vix_values, 'borderColor': '#a371f7', 'yAxisID': 'y3', 'hidden': True},
+            {'label': '貪婪指數 (右軸2)', 'data': fear_greed_values, 'borderColor': '#f778ba', 'yAxisID': 'y3'},
             {'label': 'S&P 500 (右軸1)', 'data': sp500_values, 'borderColor': '#d29922', 'yAxisID': 'y2'}
         ]
     }
@@ -779,10 +785,9 @@ def generate_combined_html(grouped_data, composite_data=None, fast_composite_dat
                                 },
                                 y3: {
                                     type: 'linear', position: 'right',
-                                    title: { display: true, text: 'VIX Index', color: '#a371f7' },
+                                    title: { display: true, text: 'VIX / 貪婪指數', color: '#a371f7' },
                                     ticks: { color: '#a371f7' },
-                                    grid: { display: false },
-                                    // 將 y3 放在 y2 的內側或外側，此處 Chart.js 會自動排開
+                                    grid: { display: false }
                                 }
                             }
                         }
