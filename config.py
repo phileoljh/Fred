@@ -72,6 +72,9 @@ INDICATORS = [
     {"id": "INDPRO", "name": "工業生產指數 (Industrial Production)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "BUSINV", "name": "商業庫存 (Business Inventories)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "REAINTRATREARAT1MO", "name": "1個月期實質利率 (1-Month Real Interest Rate)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "lin", "format": "{value}%", "points": 12, "true_freq": "monthly"},
+    # PALLFNFINDEXM：IMF 主要大宗商品價格指數月頻版本，顯示原始指數絕對水準（2016=100 基期）。
+    # 月報頻率，設定回溯顯示 18 筆（18 個月）以利對比圖 X 軸對齊，作為通膨上游傳導壓力的觀察參考指標，不計入評分模型。
+    {"id": "PALLFNFINDEXM", "name": "IMF 全球大宗商品價格指數 (Global Commodity Price Index)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "lin", "format": "{value} pts", "points": 18, "true_freq": "monthly", "decimals": 2},
     {"id": "CPIAUCSL", "name": "消費者物價指數 (CPI)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
     {"id": "PCEPILFE", "name": "核心個人消費支出物價指數 (Core PCE Price Index)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
     {"id": "PPIACO", "name": "生產者物價指數 (PPI)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly"},
@@ -123,6 +126,8 @@ CHART_GROUPS = [
     {"name": "生產流水線動能 (Manufacturing Pipeline)", "members": ["NEWORDER", "INDPRO", "BUSINV"]},
     {"name": "房地產熱度對比 (Housing Market Activity)", "members": ["PERMIT","HOUST", "EXHOSLUSM495S"]},
     {"name": "聯邦利息支出佔收入比 (Federal Interest to Receipts Ratio)", "members": ["FED_INTEREST_TO_RECEIPTS_RATIO"]},
+    # 觀察實質利率（貨幣緊縮程度）與全球大宗商品 YoY% 之間的相關性（兩者皆以 % 呈現）：實質利率上升通常壓制商品需求，反之亦然。
+    {"name": "實質利率與大宗商品指數對比 (Real Rate vs. Commodity Index)", "members": ["REAINTRATREARAT1MO", "PALLFNFINDEXM"]},
 ]
 
 # ==========================================
@@ -179,6 +184,7 @@ MACRO_SCORE_MODEL = {
             "PPIACO": {"polarity": "negative", "sub_weight": 0.0},        # PPI (留查不計分)
             "REAINTRATREARAT1MO": {"polarity": "negative", "sub_weight": 0.0},      # 1個月期實質利率 (屬落後結果結果, 留查不計分)
             "RTWEXBGS": {"polarity": "negative", "sub_weight": 0.0},      # 廣義美元指數 (留查不計分)
+            "PALLFNFINDEXM": {"polarity": "negative", "sub_weight": 0.0}, # IMF全球大宗商品指數YoY% (上游通膨壓力觀察, 留查不計分)
         }
     },
     "Labor_Market": {
@@ -286,6 +292,7 @@ FAST_MACRO_SCORE_MODEL = {
 # UMCSENT: 密大消費者信心，先行反映消費者未來的消費意願與通膨預期。
 # NEWORDER / INDPRO / BUSINV: 涵蓋生產流水線：下單(NEWORDER) -> 製造(INDPRO) -> 堆貨庫存(BUSINV)。
 # REAINTRATREARAT1MO: 1個月期實質利率 (實質國庫券利率)。由克里夫蘭聯邦準備銀行估算，反映扣除預期通膨後的極短期真實無風險借貸成本。正值上升代表實質緊縮，負值代表實質寬鬆。
+# PALLFNFINDEXM: IMF 全球大宗商品價格指數 YoY%（月報）。採年增率與「1個月期實質利率」單位統一（皆為 %），便於對比觀察。商品價格上漲通常領先消費端通膨 2~4 個月，實質利率上升則反向壓制商品需求。
 # CPIAUCSL / PCEPILFE / PPIACO / PPIFES: 觀察美國消費者物價及聯準會最看重的核心PCE(月增率MoM)，與生產端出廠物價的變化。
 # RTWEXBGS: 實質廣義美元指數。衡量美元相對主要貿易夥伴貨幣的強弱，美元走強通常壓制大宗商品與新興市場。
 # M2SL: M2 貨幣供給量。廣義貨幣總量，觀察貨幣寬鬆或緊縮的長期趨勢。
