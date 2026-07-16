@@ -183,21 +183,31 @@ def get_data_for_ui():
                 date_val = latest['x']
                 # Re-reverse for consistency if needed, but get_data_for_ui expects history to be oldest-to-newest for chart
         
+        # 統一管理三種基準線模式：
+        #   "zero" → 只顯示 0 軸紅實線（取代均線）
+        #   "dual" → 同時顯示 18 月均線（灰虛線）+ 0 軸（紅實線）
+        #   "avg"  → 只顯示 18 月均線（其餘所有指標預設值）
+        BASELINE_MODE_MAP = {
+            "SOFR_IORB_SPREAD": "zero",
+            "T10Y2Y":           "dual",
+            "T10Y3M":           "dual",
+        }
+        baseline_mode = BASELINE_MODE_MAP.get(item['id'], "avg")
+        
         # Calculate baseline (0-axis or 18-mo avg)
         baseline_val = None
         if history:
             y_vals = [h['y'] for h in history]
-            
-            # Only apply the forced 0.0 baseline to the three specific yield spread indicators 
-            # requested by the user. Everything else falls back to the 18-month moving average.
-            zero_axis_indicators = ["SOFR_IORB_SPREAD", "T10Y2Y", "T10Y3M"]
-            
-            if item['id'] in zero_axis_indicators:
-                baseline_val = 0.0
-            else:
-                baseline_val = sum(y_vals) / len(y_vals)
+            baseline_val = 0.0 if baseline_mode == "zero" else sum(y_vals) / len(y_vals)
                 
         history_baseline = [{'x': h['x'], 'y': baseline_val} for h in history] if baseline_val is not None else []
+        
+        # dual 模式才需要額外的 0 軸資料陣列（zero / avg 模式維持空陣列）
+        history_zero_baseline = (
+            [{'x': h['x'], 'y': 0.0} for h in history]
+            if baseline_mode == "dual" and history
+            else []
+        )
         
         baseline_display = ""
         if baseline_val is not None:
@@ -271,6 +281,8 @@ def get_data_for_ui():
             'raw_val': val_float,
             'history': history,
             'history_baseline': history_baseline,
+            'history_zero_baseline': history_zero_baseline,
+            'baseline_mode': baseline_mode,
             'baseline_display_val': baseline_display,
             'chart_id': f"chart_{idx}_{item['id'].replace('-', '_')}"
         })
@@ -688,8 +700,9 @@ def generate_html(data):
                     "id": item['chart_id'],
                     "data": item['history'],
                     "baseline": item['history_baseline'],
+                    "zero_baseline": item.get('history_zero_baseline', []),
+                    "baseline_mode": item.get('baseline_mode', 'avg'),
                     "is_negative": (item['id'] == 'SAHMREALTIME' and item['raw_val'] >= 0.5),
-                    "is_zero_baseline": (item['id'] in ["SOFR_IORB_SPREAD", "T10Y2Y", "T10Y3M"]),
                     "fmt": item.get('format', '{value}'),
                     "decimals": item.get('decimals', 2)
                 })
@@ -698,7 +711,18 @@ def generate_html(data):
             if item.get('baseline_display_val'):
                 is_zero = item['baseline_display_val'].startswith("0.00") or item['baseline_display_val'] == "0.00%"
                 baseline_label = "0 軸" if is_zero else "18月平均"
-                baseline_html = f'<div class="baseline-badge" style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"><line x1="2" y1="12" x2="22" y2="12"></line></svg>{baseline_label} {item["baseline_display_val"]}</div>'
+                if item.get('history_zero_baseline'):
+                    # T10Y2Y / T10Y3M 同時顯示 0 軸與 18 月平均標籤
+                    baseline_html = (
+                        f'<div class="baseline-badge" style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto; display: flex; align-items: center; gap: 6px;">'
+                        f'<span style="color:#f85149; font-weight:600;">━</span> 0 軸'
+                        f'<span style="opacity:0.4;">｜</span>'
+                        f'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"><line x1="2" y1="12" x2="22" y2="12"></line></svg>'
+                        f'18月均 {item["baseline_display_val"]}'
+                        f'</div>'
+                    )
+                else:
+                    baseline_html = f'<div class="baseline-badge" style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"><line x1="2" y1="12" x2="22" y2="12"></line></svg>{baseline_label} {item["baseline_display_val"]}</div>'
 
             html_content += f"""
             <a href="{link}" target="_blank" class="card">
@@ -763,7 +787,7 @@ def generate_html(data):
                 let baseColor = 'rgba(139, 148, 158, 0.5)';
                 let baseDash = [5, 5];
                 let baseWidth = 1.5;
-                if (conf.is_zero_baseline) {
+                if (conf.baseline_mode === 'zero') {
                     baseColor = '#f85149';
                     baseDash = [];
                     baseWidth = 2;
@@ -783,37 +807,55 @@ def generate_html(data):
                 gradient.addColorStop(0, gradientStart);
                 gradient.addColorStop(1, gradientEnd);
                 
+                // 建立 datasets 陣列：先組合基準線，最後推入實際數值線
+                const datasets = [
+                    // Dataset 0：18 月均線（灰色虛線）或 SOFR 專用 0 軸（紅實線）
+                    {
+                        data: baselineValues,
+                        borderColor: baseColor,
+                        borderWidth: baseWidth,
+                        borderDash: baseDash,
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        fill: false,
+                        tension: 0,
+                        tooltip: { callbacks: { label: function() { return null; } } }
+                    }
+                ];
+                
+                // Dataset 1（選用）：dual 模式才額外顯示 0 軸紅實線
+                if (conf.baseline_mode === 'dual') {
+                    const zeroValues = (conf.zero_baseline || []).map(d => d.y);
+                    datasets.push({
+                        data: zeroValues,
+                        borderColor: 'rgba(248, 81, 73, 0.7)',
+                        borderWidth: 1.5,
+                        borderDash: [],
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        fill: false,
+                        tension: 0,
+                        tooltip: { callbacks: { label: function() { return null; } } }
+                    });
+                }
+                
+                // 最後一個 dataset：實際指標數值（藍色面積線）
+                datasets.push({
+                    data: values,
+                    borderColor: lineColor,
+                    backgroundColor: gradient,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    fill: true,
+                    tension: 0.4
+                });
+                
                 new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: labels,
-                        datasets: [
-                            {
-                                data: baselineValues,
-                                borderColor: baseColor,
-                                borderWidth: baseWidth,
-                                borderDash: baseDash,
-                                pointRadius: 0,
-                                pointHoverRadius: 0,
-                                fill: false,
-                                tension: 0,
-                                tooltip: {
-                                    callbacks: {
-                                        label: function() { return null; }
-                                    }
-                                }
-                            },
-                            {
-                                data: values,
-                                borderColor: lineColor,
-                                backgroundColor: gradient,
-                                borderWidth: 2,
-                                pointRadius: 0,
-                                pointHoverRadius: 4,
-                                fill: true,
-                                tension: 0.4
-                            }
-                        ]
+                        datasets: datasets
                     },
                     options: {
                         responsive: true,
@@ -832,7 +874,9 @@ def generate_html(data):
                                 displayColors: false,
                                 callbacks: {
                                     label: function(context) {
-                                        if (context.datasetIndex === 0) return null;
+                                        // 僅最後一個 dataset（實際數值線）顯示 tooltip，跳過所有基準線
+                                        const lastIdx = context.chart.data.datasets.length - 1;
+                                        if (context.datasetIndex !== lastIdx) return null;
                                         const fmt = conf.fmt || '{value}';
                                         const dec = conf.decimals != null ? conf.decimals : 2;
                                         const num = parseFloat(context.parsed.y).toFixed(dec);
