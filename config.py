@@ -23,7 +23,8 @@ INDICATORS = [
     {"id": "ICSA", "name": "初領失業金人數 (Initial Claims)", "freq": "Priority", "category": "榮景期指標 (Priority)", "units": "lin", "format": "{value}K", "points": 14, "true_freq": "weekly", "scale": 1000, "decimals": 1},
     {"id": "PCEC96", "name": "實質個人消費支出 (Real PCE)", "freq": "Priority", "category": "榮景期指標 (Priority)", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "UMCSENT", "name": "密西根大學消費者信心指數 (U.S. Consumer Sentiment)", "freq": "Priority", "category": "榮景期指標 (Priority)", "units": "lin", "format": "{value} pts", "points": 12, "true_freq": "monthly"},
-    {"id": "BUSINV", "name": "商業庫存 (Business Inventories)", "freq": "Priority", "category": "榮景期指標 (Priority)", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
+    # {"id": "BUSINV", "name": "商業庫存 (Business Inventories)", "freq": "Priority", "category": "榮景期指標 (Priority)", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
+    {"id": "ISRATIO", "name": "存銷比 (Inventory to Sales Ratio)", "freq": "Priority", "category": "榮景期指標 (Priority)", "units": "lin", "format": "{value}", "points": 12, "true_freq": "monthly"},
     {"id": "FPI", "name": "固定私人投資 (Fixed Private Investment)", "freq": "Priority", "category": "榮景期指標 (Priority)", "units": "pc1", "format": "{value}% YoY", "points": 4, "true_freq": "quarterly"},
     {"id": "SLCEC1", "name": "州和地方政府消費支出 (State & Local Gov Consumption)", "freq": "Priority", "category": "榮景期指標 (Priority)", "units": "pc1", "format": "{value}% YoY", "points": 4, "true_freq": "quarterly"},
     {"id": "DRCCLACBS", "name": "信用卡違約率 (Delinquency Rate: Credit Card Loans)", "freq": "Priority", "category": "榮景期指標 (Priority)", "units": "lin", "format": "{value}%", "points": 4, "true_freq": "quarterly"},
@@ -70,7 +71,8 @@ INDICATORS = [
     {"id": "PCEDGC96", "name": "實質耐久財消費支出 (Real PCE: Durable Goods)", "freq": "Monthly", "category": "Consumption & Sentiment", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "NEWORDER", "name": "核心資本財訂單 (Nondefense Capital Goods Orders Excl. Aircraft)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
     {"id": "INDPRO", "name": "工業生產指數 (Industrial Production)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
-    {"id": "BUSINV", "name": "商業庫存 (Business Inventories)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
+    # {"id": "BUSINV", "name": "商業庫存 (Business Inventories)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "pc1", "format": "{value}% YoY", "points": 12, "true_freq": "monthly"},
+    {"id": "ISRATIO", "name": "存銷比 (Inventory to Sales Ratio)", "freq": "Monthly", "category": "Production & Manufacturing", "units": "lin", "format": "{value}", "points": 12, "true_freq": "monthly"},
     {"id": "REAINTRATREARAT1MO", "name": "1個月期實質利率 (1-Month Real Interest Rate)", "freq": "Monthly", "category": "Monetary & Inflation", "units": "lin", "format": "{value}%", "points": 12, "true_freq": "monthly"},
     # PALLFNFINDEXM：IMF 主要大宗商品價格指數月頻版本，顯示原始指數絕對水準（2016=100 基期）。
     # 月報頻率，設定回溯顯示 18 筆（18 個月）以利對比圖 X 軸對齊，作為通膨上游傳導壓力的觀察參考指標，不計入評分模型。
@@ -123,7 +125,7 @@ CHART_GROUPS = [
     {"name": "通膨指標對比 (Inflation: CPI vs. PPI)", "members": ["CPIAUCSL", "PPIACO"]},
     {"name": "核心通膨對比 (Core Inflation: PCE vs. PPI)", "members": ["PCEPILFE", "PPIFES"]},
     {"name": "殖利率曲線對比 (Yield Curve Comparison)", "members": ["T10Y2Y", "T10Y3M"]},
-    {"name": "生產流水線動能 (Manufacturing Pipeline)", "members": ["NEWORDER", "INDPRO", "BUSINV"]},
+    # {"name": "生產流水線動能 (Manufacturing Pipeline)", "members": ["NEWORDER", "INDPRO", "BUSINV"]},
     {"name": "房地產熱度對比 (Housing Market Activity)", "members": ["PERMIT","HOUST", "EXHOSLUSM495S"]},
     {"name": "聯邦利息支出佔收入比 (Federal Interest to Receipts Ratio)", "members": ["FED_INTEREST_TO_RECEIPTS_RATIO"]},
     # 觀察實質利率（貨幣緊縮程度）與全球大宗商品 YoY% 之間的相關性（兩者皆以 % 呈現）：實質利率上升通常壓制商品需求，反之亦然。
@@ -214,7 +216,8 @@ MACRO_SCORE_MODEL = {
             "DSPIC96": {"polarity": "positive", "sub_weight": 0.0},       # 實質可支配所得 (留查不計分)
             "PCEDGC96": {"polarity": "positive", "sub_weight": 0.0},      # 耐久財消費 (留查不計分)
             "UMCSENT": {"polarity": "positive", "sub_weight": 0.0},       # 消費者信心 (留查不計分)
-            "BUSINV": {"polarity": "neutral", "sub_weight": 0.0},         # 商業庫存 (留查不計分)
+            # "BUSINV": {"polarity": "neutral", "sub_weight": 0.0},         # 商業庫存 (留查不計分)
+            "ISRATIO": {"polarity": "neutral", "sub_weight": 0.0},        # 存銷比 (留查不計分)
             "PERMIT": {"polarity": "positive", "sub_weight": 0.0},        # 營建許可 (留查不計分)
             "HOUST": {"polarity": "positive", "sub_weight": 0.0},         # 新屋開工 (留查不計分)
             "EXHOSLUSM495S": {"polarity": "positive", "sub_weight": 0.0}, # 成屋銷售 (留查不計分)
@@ -290,7 +293,8 @@ FAST_MACRO_SCORE_MODEL = {
 # CIVPART: 勞動參與率。就業市場結構健康的指標，影響失業率解讀。
 # RSXFS / PCEC96 / PCEDGC96 / DSPIC96: 零售銷售、實質/耐久財消費支出及實質可支配所得，由於美國是消費大國，反映民眾最真實的收入與消費狀況。
 # UMCSENT: 密大消費者信心，先行反映消費者未來的消費意願與通膨預期。
-# NEWORDER / INDPRO / BUSINV: 涵蓋生產流水線：下單(NEWORDER) -> 製造(INDPRO) -> 堆貨庫存(BUSINV)。
+# NEWORDER / INDPRO / BUSINV: 涵蓋生產流水線：下單(NEWORDER) -> 製造(INDPRO) -> 堆貨庫存(BUSINV)。(已停用)
+# ISRATIO: 存銷比 (Inventory to Sales Ratio)，衡量企業庫存與銷售的關係，通常為反向指標。
 # REAINTRATREARAT1MO: 1個月期實質利率 (實質國庫券利率)。由克里夫蘭聯邦準備銀行估算，反映扣除預期通膨後的極短期真實無風險借貸成本。正值上升代表實質緊縮，負值代表實質寬鬆。
 # PALLFNFINDEXM: IMF 全球大宗商品價格指數 YoY%（月報）。採年增率與「1個月期實質利率」單位統一（皆為 %），便於對比觀察。商品價格上漲通常領先消費端通膨 2~4 個月，實質利率上升則反向壓制商品需求。
 # CPIAUCSL / PCEPILFE / PPIACO / PPIFES: 觀察美國消費者物價及聯準會最看重的核心PCE(月增率MoM)，與生產端出廠物價的變化。
