@@ -96,18 +96,30 @@ INDICATORS = [
     {"id": "IMPGS", "name": "商品與服務進口 (Imports of Goods & Services)", "freq": "Quarterly", "category": "GDP Output", "units": "pc1", "format": "{value}% YoY", "points": 4, "true_freq": "quarterly"},
 
     # Liquidity & Money Supply
+    # 按照更新時效特性由快到慢排列：日頻 (Daily) ➔ 週頻 (Weekly) ➔ 月頻 (Monthly) ➔ 季頻 (Quarterly)
+    
+    # 【日頻 Daily】
+    {"id": "RRPONTSYD", "name": "隔夜逆回購 (Reverse Repo)", "freq": "Daily", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}B", "points": 30, "true_freq": "daily", "scale": 1, "decimals": 2},
+    
+    # 【週頻 Weekly】
+    {"id": "WALCL", "name": "聯準會總資產 (Fed Balance Sheet)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 14, "true_freq": "weekly", "scale": 1000000, "decimals": 2},
+    {"id": "WTREGEN", "name": "財政部一般帳戶 (TGA Balance)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}B", "points": 14, "true_freq": "weekly", "scale": 1000, "decimals": 2},
+    # WRBWFRBL：商業銀行在聯準會準備金存款 (Reserve Balances with Federal Reserve Banks: Wednesday Level)。
+    # 原始單位為百萬美元 (Millions of Dollars)，設定 scale 1,000,000 轉為兆美元 (Trillions)，format 設為 "{value}T"，小數點兩位。
+    {"id": "WRBWFRBL", "name": "銀行準備金餘額 (Reserve Balances)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 14, "true_freq": "weekly", "scale": 1000000, "decimals": 2},
+    
+    # 【月頻 Monthly】
+    {"id": "M2SL", "name": "M2 貨幣供給量 (M2 Money Supply)", "freq": "Monthly", "category": "Liquidity & Money Supply", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly", "decimals": 2},
+    
+    # 【季頻 Quarterly】
     # GFDEBTN：美國聯邦政府的總公共債務 (Federal Debt: Total Public Debt)。
     # 由於 FRED 的原始數值單位為「百萬美元 (Millions of Dollars)」，
     # 我們設定 scale 為 1,000,000 以將數值轉換成「兆美元 (Trillions)」，
     # format 設為 "{value}T"，並保留兩位小數。
     # 該指標的發布頻率為季報 (Quarterly)，在此設定回溯顯示點數為 4 季。
     {"id": "GFDEBTN", "name": "聯邦債務：總公共債務 (Federal Debt: Total Public Debt)", "freq": "Quarterly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 4, "true_freq": "quarterly", "scale": 1000000, "decimals": 2},
-    {"id": "WALCL", "name": "聯準會總資產 (Fed Balance Sheet)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 14, "true_freq": "weekly", "scale": 1000000, "decimals": 2},
-    {"id": "WTREGEN", "name": "財政部一般帳戶 (TGA Balance)", "freq": "Weekly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}B", "points": 14, "true_freq": "weekly", "scale": 1000, "decimals": 2},
-    {"id": "RRPONTSYD", "name": "隔夜逆回購 (Reverse Repo)", "freq": "Daily", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}B", "points": 30, "true_freq": "daily", "scale": 1, "decimals": 2},
-    {"id": "M2SL", "name": "M2 貨幣供給量 (M2 Money Supply)", "freq": "Monthly", "category": "Liquidity & Money Supply", "units": "pch", "format": "{value}% MoM", "points": 12, "true_freq": "monthly", "decimals": 2},
-    {"id": "FGRECPT", "name": "聯邦財政收入 (Federal Government Current Receipts)", "freq": "Quarterly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 24, "true_freq": "quarterly", "scale": 1000, "decimals": 2},
     {"id": "A091RC1Q027SBEA", "name": "聯邦利息支出 (Federal Interest Payments)", "freq": "Quarterly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 24, "true_freq": "quarterly", "scale": 1000, "decimals": 2},
+    {"id": "FGRECPT", "name": "聯邦財政收入 (Federal Government Current Receipts)", "freq": "Quarterly", "category": "Liquidity & Money Supply", "units": "lin", "format": "{value}T", "points": 24, "true_freq": "quarterly", "scale": 1000, "decimals": 2},
     
     # Benchmarks (No Score)
     {"id": "SP500", "name": "S&P 500 指數 (SP500)", "freq": "Daily", "category": "Market Benchmark", "units": "lin", "format": "{value}", "points": 30, "true_freq": "daily", "decimals": 2},
@@ -170,6 +182,7 @@ MACRO_SCORE_MODEL = {
             "WALCL": {"polarity": "positive", "sub_weight": 0.0},         # 已併入淨流動性
             "WTREGEN": {"polarity": "negative", "sub_weight": 0.0},       # 已併入淨流動性
             "RRPONTSYD": {"polarity": "negative", "sub_weight": 0.0},     # 已併入淨流動性
+            "WRBWFRBL": {"polarity": "positive", "sub_weight": 0.0},      # 銀行準備金餘額 (備查不重複計分)
             "M2SL": {"polarity": "positive", "sub_weight": 0.4},          # M2貨幣供給
             "DRCCLACBS": {"polarity": "negative", "sub_weight": 0.1},     # 信用卡違約率
             "DRBLACBS": {"polarity": "negative", "sub_weight": 0.1},      # 商業貸款違約率
@@ -241,6 +254,7 @@ FAST_MACRO_SCORE_MODEL = {
             "WALCL": {"polarity": "positive", "sub_weight": 0.0},        # 已併入淨流動性
             "WTREGEN": {"polarity": "negative", "sub_weight": 0.0},      # 已併入淨流動性
             "RRPONTSYD": {"polarity": "negative", "sub_weight": 0.0},    # 已併入淨流動性
+            "WRBWFRBL": {"polarity": "positive", "sub_weight": 0.0},     # 銀行準備金餘額 (備查不重複計分)
             "IORB": {"polarity": "negative", "sub_weight": 0.2},         # 準備金利率 (日)
             "SOFR": {"polarity": "negative", "sub_weight": 0.2},         # 隔夜利率 (日)
             "T10YIE": {"polarity": "negative", "sub_weight": 0.2},       # 通膨預期 (日): 下降有利於減輕 Fed 緊縮壓力

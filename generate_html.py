@@ -87,8 +87,18 @@ def get_data_for_ui():
     # Insert Net Liquidity
     all_indicators.append(net_liq_info)
     
-    # 強制調整流動性指標順序: [GFDEBTN, A091RC1Q027SBEA, FGRECPT, M2SL, NET_LIQUIDITY, WALCL, WTREGEN, RRPONTSYD]
-    liq_order = ["GFDEBTN", "A091RC1Q027SBEA", "FGRECPT", "M2SL", "NET_LIQUIDITY", "WALCL", "WTREGEN", "RRPONTSYD"]
+    # 強制調整流動性指標順序（更新快在前：日頻 ➔ 週頻 ➔ 月頻 ➔ 季頻）
+    liq_order = [
+        "RRPONTSYD",        # 日頻：隔夜逆回購
+        "NET_LIQUIDITY",    # 週頻：市場淨流動性 (合成指標)
+        "WALCL",            # 週頻：聯準會總資產
+        "WTREGEN",          # 週頻：財政部一般帳戶 (TGA)
+        "WRBWFRBL",         # 週頻：銀行準備金餘額
+        "M2SL",             # 月頻：M2 貨幣供給量
+        "GFDEBTN",          # 季頻：聯邦債務：總公共債務
+        "A091RC1Q027SBEA",  # 季頻：聯邦利息支出
+        "FGRECPT"           # 季頻：聯邦財政收入
+    ]
     # 先把這些指標從列表中移除
     liq_items = [item for item in all_indicators if item['id'] in liq_order]
     other_items = [item for item in all_indicators if item['id'] not in liq_order]
