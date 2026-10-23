@@ -332,6 +332,10 @@ def generate_html(data):
                 --negative: #f85149;
                 --card-bg: rgba(22, 27, 34, 0.7);
             }}
+
+            *, *::before, *::after {{
+                box-sizing: border-box;
+            }}
             
             body {{
                 font-family: 'Inter', 'Noto Sans TC', sans-serif;
@@ -393,6 +397,7 @@ def generate_html(data):
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
                 gap: 25px;
+                min-width: 0;
             }}
             
             .card {{
@@ -406,6 +411,8 @@ def generate_html(data):
                 overflow: hidden;
                 display: flex;
                 flex-direction: column;
+                min-width: 0;
+                max-width: 100%;
             }}
             
             .card::before {{
@@ -554,8 +561,15 @@ def generate_html(data):
                 flex: 1;
                 min-height: 120px;
                 width: 100%;
+                min-width: 0;
+                max-width: 100%;
+                overflow: hidden;
                 position: relative;
                 margin-top: auto;
+            }}
+
+            .chart-container canvas {{
+                max-width: 100% !important;
             }}
  
             a {{ text-decoration: none; }}
@@ -644,6 +658,33 @@ def generate_html(data):
 
             .footer-btn svg {{
                 opacity: 0.7;
+            }}
+
+            /* 響應式優化 (Responsive Adjustments) */
+            @media (max-width: 1024px) {{
+                .nav-container {{
+                    justify-content: flex-start;
+                    padding: 12px 16px;
+                    margin: -20px -16px 30px -16px;
+                    -webkit-overflow-scrolling: touch;
+                }}
+                .nav-wrapper {{
+                    justify-content: flex-start;
+                    width: max-content;
+                }}
+            }}
+
+            @media (max-width: 768px) {{
+                body {{
+                    padding: 20px 16px;
+                }}
+                .grid {{
+                    grid-template-columns: 1fr;
+                    gap: 16px;
+                }}
+                .card {{
+                    padding: 20px 16px;
+                }}
             }}
         </style>
 
@@ -870,6 +911,14 @@ def generate_html(data):
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                left: 4,
+                                right: 10,
+                                top: 4,
+                                bottom: 2
+                            }
+                        },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
