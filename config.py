@@ -44,6 +44,7 @@ INDICATORS = [
     # Daily (1 Month = ~22-30 points)
     {"id": "T10Y3M", "name": "10年期減3個月期公債利差 (10Y-3M Spread)", "freq": "Daily", "category": "Rates & Spreads", "units": "lin", "format": "{value}%", "points": 30, "true_freq": "daily"},
     {"id": "T10Y2Y", "name": "10年期減2年期公債利差 (10Y-2Y Spread)", "freq": "Daily", "category": "Rates & Spreads", "units": "lin", "format": "{value}%", "points": 30, "true_freq": "daily"},
+    {"id": "SRFTSYD", "name": "常設回購操作利率 (Standing Repo Facility Rate)", "freq": "Daily", "category": "Rates & Spreads", "units": "lin", "format": "{value}%", "points": 30, "true_freq": "daily", "decimals": 2},
     {"id": "IORB", "name": "準備金餘額利率 (IORB)", "freq": "Daily", "category": "Rates & Spreads", "units": "lin", "format": "{value}%", "points": 30, "true_freq": "daily"},
     {"id": "SOFR", "name": "擔保隔夜融資利率 (SOFR)", "freq": "Daily", "category": "Rates & Spreads", "units": "lin", "format": "{value}%", "points": 30, "true_freq": "daily"},
     {"id": "BAMLC0A4CBBB", "name": "美國 BBB 級企業債選擇權調整利差 (US BBB Corporate OAS)", "freq": "Daily", "category": "Credit Risk", "units": "lin", "format": "{value}%", "points": 30, "true_freq": "daily"},
@@ -53,6 +54,7 @@ INDICATORS = [
     {"id": "VIXCLS", "name": "VIX恐慌指數 (CBOE Volatility Index)", "freq": "Daily", "category": "Consumption & Sentiment", "units": "lin", "format": "{value} pts", "points": 30, "true_freq": "daily"},
     
     # Weekly (3 Months = ~13-14 points)
+    {"id": "WEI", "name": "每週經濟指數 (Weekly Economic Index, WEI)", "freq": "Weekly", "category": "Production & Manufacturing", "units": "lin", "format": "{value}%", "points": 14, "true_freq": "weekly", "decimals": 2},
     {"id": "ICSA", "name": "初領失業金人數 (Initial Claims)", "freq": "Weekly", "category": "Labor Market", "units": "lin", "format": "{value}K", "points": 14, "true_freq": "weekly", "scale": 1000, "decimals": 1},
     
     # Monthly (1 Year = 12 points)
@@ -136,6 +138,7 @@ CHART_GROUPS = [
     {"name": "通膨指標對比 (Inflation: CPI vs. PPI)", "members": ["CPIAUCSL", "PPIACO"]},
     {"name": "核心通膨對比 (Core Inflation: PCE vs. PPI)", "members": ["PCEPILFE", "PPIFES"]},
     {"name": "殖利率曲線對比 (Yield Curve Comparison)", "members": ["T10Y2Y", "T10Y3M"]},
+    {"name": "貨幣市場利率走廊對比 (Money Market Rate Corridor)", "members": ["SRFTSYD", "SOFR", "IORB"]},
     # {"name": "生產流水線動能 (Manufacturing Pipeline)", "members": ["NEWORDER", "INDPRO", "BUSINV"]},
     {"name": "房地產熱度對比 (Housing Market Activity)", "members": ["PERMIT","HOUST", "EXHOSLUSM495S"]},
     {"name": "聯邦利息支出佔收入比 (Federal Interest to Receipts Ratio)", "members": ["FED_INTEREST_TO_RECEIPTS_RATIO"]},
@@ -225,6 +228,7 @@ MACRO_SCORE_MODEL = {
             "PCEC96": {"polarity": "positive", "sub_weight": 0.2},        # 實質PCE
             "INDPRO": {"polarity": "positive", "sub_weight": 0.1},        # 工業生產
             "NEWORDER": {"polarity": "positive", "sub_weight": 0.1},      # 核心資本財訂單
+            "WEI": {"polarity": "positive", "sub_weight": 0.0},           # 每週經濟指數 (高頻領先動能, 留查不計分)
             "DSPIC96": {"polarity": "positive", "sub_weight": 0.0},       # 實質可支配所得 (留查不計分)
             "PCEDGC96": {"polarity": "positive", "sub_weight": 0.0},      # 耐久財消費 (留查不計分)
             "UMCSENT": {"polarity": "positive", "sub_weight": 0.0},       # 消費者信心 (留查不計分)
@@ -257,6 +261,7 @@ FAST_MACRO_SCORE_MODEL = {
             "WRBWFRBL": {"polarity": "positive", "sub_weight": 0.0},     # 銀行準備金餘額 (備查不重複計分)
             "IORB": {"polarity": "negative", "sub_weight": 0.2},         # 準備金利率 (日)
             "SOFR": {"polarity": "negative", "sub_weight": 0.2},         # 隔夜利率 (日)
+            "SRFTSYD": {"polarity": "negative", "sub_weight": 0.0},      # 常設回購利率 (日, 走廊天花板留查不重複計分)
             "T10YIE": {"polarity": "negative", "sub_weight": 0.2},       # 通膨預期 (日): 下降有利於減輕 Fed 緊縮壓力
         }
     },
@@ -275,6 +280,7 @@ FAST_MACRO_SCORE_MODEL = {
         "weight": 0.30,
         "indicators": {
             "ICSA": {"polarity": "negative", "sub_weight": 0.5},         # 初領失業金 (週)
+            "WEI": {"polarity": "positive", "sub_weight": 0.0},          # 每週經濟指數 (週, 景氣動能留查不計分)
             "T10Y2Y": {"polarity": "positive", "sub_weight": 0.25},      # 10Y-2Y (利差擴大通常有利)
             "T10Y3M": {"polarity": "positive", "sub_weight": 0.25},      # 10Y-3M (利差擴大通常有利)
         }
@@ -286,6 +292,7 @@ FAST_MACRO_SCORE_MODEL = {
 # ==========================================
 # < Daily >
 # T10Y2Y / T10Y3M: 10年期減2年/3個月期公債利差，被稱為殖利率曲線倒掛與否的關鍵指標，通常領先衰退1年左右。
+# SRFTSYD: 常設回購操作利率 (Standing Repo Facility Rate)。聯準會短端貨幣市場的常備流動性後盾，為隔夜利率走廊天花板。
 # IORB: 準備金餘額利率。影響銀行拆款的關鍵利率下限。
 # SOFR: 擔保隔夜融資利率。市場上真實的短期無風險借貸成本。
 # BAMLH0A0HYM2 / BAMLH0A3HYC / BAMLC0A4CBBB: 高收益債與各級企業債利差，衡量市場恐慌與企業違約風險的信用擴張程度，BBB級為觀察「墮落天使」的重要切入點。
@@ -293,6 +300,7 @@ FAST_MACRO_SCORE_MODEL = {
 # VIXCLS: 恐慌指數，反映市場對未來 30 天 S&P 500 波動率的預期。
 #
 # < Weekly >
+# WEI: 每週經濟指數 (Weekly Economic Index)。達拉斯與紐約聯準銀整合10項高頻實體活動數據萃取之第一主成分，尺度等同於實質 GDP 4季年增率%，為高頻景氣動能之晴雨表。
 # ICSA: 初領失業救濟金人數。最即時反映就業市場榮枯的高頻數據。
 # WALCL: 聯準會總資產（資產負債表規模）。QE/QT 操作的直接觀察指標，數字縮減代表聯準會正在收緊流動性。
 #

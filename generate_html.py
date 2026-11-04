@@ -82,7 +82,12 @@ def get_data_for_ui():
     }
     
     all_indicators = INDICATORS.copy()
-    all_indicators.insert(3, spread_info) # Insert after SOFR
+    # 保持 SOFR_IORB_SPREAD 在 Rates & Spreads 分類的最前面
+    rates_idx = next((i for i, item in enumerate(all_indicators) if item.get('category') == 'Rates & Spreads'), None)
+    if rates_idx is not None:
+        all_indicators.insert(rates_idx, spread_info)
+    else:
+        all_indicators.append(spread_info)
     
     # Insert Net Liquidity
     all_indicators.append(net_liq_info)
@@ -201,6 +206,7 @@ def get_data_for_ui():
             "SOFR_IORB_SPREAD": "zero",
             "T10Y2Y":           "dual",
             "T10Y3M":           "dual",
+            "WEI":              "dual",
         }
         baseline_mode = BASELINE_MODE_MAP.get(item['id'], "avg")
         
