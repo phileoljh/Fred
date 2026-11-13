@@ -1,8 +1,9 @@
+import html
 import sqlite3
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from config import DB_PATH, HTML_PATH, AI_HTML_PATH, INDICATORS, COMBINED_HTML_PATH
 
 # ==========================================
@@ -987,7 +988,23 @@ def generate_ai_html(data):
     for item in data:
         cat = item['category']
         grouped.setdefault(cat, []).append(item)
-        
+
+    # 同時計算 UTC 與 GMT+8（台灣時間），避免 AI 依據無時區標記的時間戳誤判資料延遲
+    now_utc = datetime.now(timezone.utc)
+    now_tw = now_utc.astimezone(timezone(timedelta(hours=8)))
+    valid_dates = [
+        item['date'] for item in data
+        if item.get('date') and item['date'] != 'N/A'
+    ]
+    latest_data_date = max(valid_dates) if valid_dates else 'N/A'
+
+    # 複合衍生與非 FRED 外部指標標註真實組成成分或資料來源，避免 AI 誤判為單一 FRED 代碼
+    composite_series_map = {
+        'SOFR_IORB_SPREAD': 'SOFR_IORB_SPREAD (SOFR - IORB)',
+        'NET_LIQUIDITY': 'NET_LIQUIDITY (WALCL - WTREGEN - RRPONTSYD)',
+        'FEAR_GREED_INDEX': 'FEAR_GREED_INDEX (CNN)',
+    }
+
     html_content = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -996,18 +1013,21 @@ def generate_ai_html(data):
 </head>
 <body>
     <h1>FRED Macroeconomic Data (For AI Analysis)</h1>
-    <p>Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+    <p>Generated at: {now_utc.strftime('%Y-%m-%d %H:%M:%S')} (UTC) / {now_tw.strftime('%Y-%m-%d %H:%M:%S')} (GMT+8)</p>
+    <p>Latest Data Date: {html.escape(latest_data_date, quote=True)}</p>
     <hr>
 """
 
-    # Start the table directly since categories will be mixed into rows if we just want a flat list
+    # 拆解為獨立 6 欄純文字結構，移除重複超連結並避免數值與發布日混雜
     html_content += """
 <table border="1" cellpadding="5" cellspacing="0">
   <thead>
     <tr>
-      <th>Name</th>
-      <th>Value (Released)</th>
-      <th>18M Avg / Baseline</th>
+      <th>Series ID</th>
+      <th>Indicator Name</th>
+      <th>Latest Value</th>
+      <th>18M Baseline</th>
+      <th>Released Date</th>
       <th>Category</th>
     </tr>
   </thead>
@@ -1017,26 +1037,25 @@ def generate_ai_html(data):
         items = grouped[cat]
         if not items:
             continue
-        
+
         for item in items:
-            if item['id'] == 'FEAR_GREED_INDEX':
-                link = 'https://www.cnn.com/markets/fear-and-greed'
-            elif item['id'] in ['SOFR_IORB_SPREAD', 'NET_LIQUIDITY']:
-                link = '#'
-            else:
-                link = f"https://fred.stlouisfed.org/series/{item['id']}"
+            series_id_text = composite_series_map.get(item['id'], item['id'])
             raw_baseline = item.get('baseline_display_val', '') or ''
-            if raw_baseline.startswith('0.00'):
+            if item.get('baseline_mode') == 'zero':
                 baseline = '0 軸 (Zero Axis)'
             elif raw_baseline:
                 baseline = f'{raw_baseline}'
             else:
                 baseline = 'N/A'
+
+            # 對所有儲存格內容進行 HTML 實體轉義（如 '<5 Weeks' -> '&lt;5 Weeks'、'&' -> '&amp;'）
             html_content += "    <tr>\n"
-            html_content += f"      <td><a href=\"{link}\">{item['name']}</a></td>\n"
-            html_content += f"      <td>{item['display_val']} (Released: {item['date']})</td>\n"
-            html_content += f"      <td>{baseline}</td>\n"
-            html_content += f"      <td>{cat}</td>\n"
+            html_content += f"      <td>{html.escape(series_id_text, quote=True)}</td>\n"
+            html_content += f"      <td>{html.escape(item['name'], quote=True)}</td>\n"
+            html_content += f"      <td>{html.escape(item['display_val'], quote=True)}</td>\n"
+            html_content += f"      <td>{html.escape(baseline, quote=True)}</td>\n"
+            html_content += f"      <td>{html.escape(item['date'], quote=True)}</td>\n"
+            html_content += f"      <td>{html.escape(cat, quote=True)}</td>\n"
             html_content += "    </tr>\n"
 
     html_content += """
