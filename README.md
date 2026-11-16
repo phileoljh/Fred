@@ -28,6 +28,7 @@ FRED/
 ├── fetch_data.py       # 負責呼叫 FRED API 並每日同步最新資料 (含貪婪指數 30 天同步)
 ├── generate_html.py    # 負責產生主儀表板 (index.html, ai_view.html)
 ├── combined.py         # 負責產生綜合對比儀表板 (combined.html)
+├── send_email.py       # (選用) 負責透過 Resend API 將 ai_view.html 每日自動寄送至信箱供 Gemini 排程讀取
 ├── .env.example        # 環境變數範例檔
 ├── requirements.txt    # Python 依賴包列表
 └── .gitignore          # 避免將敏感資料與產生的靜態網頁上傳到 Git
@@ -99,7 +100,7 @@ python combined.py
 * **Framework preset (框架預設)：** `None`
 * **Build command (組建命令)：**
   ```bash
-  pip install -r requirements.txt && python init_db.py && python generate_html.py && python combined.py && mkdir -p dist && mv *.html dist/
+  pip install -r requirements.txt && python init_db.py && python generate_html.py && python combined.py && python send_email.py && mkdir -p dist && mv *.html dist/
   ```
 * **Build output directory (組建輸出目錄)：** `dist`
   * **⚠️ 常見錯誤：** 結尾嚴禁加上斜線 (不可寫成 `dist/`)，否則系統會報錯。
@@ -176,6 +177,35 @@ export default {
 3. 找到 **Domains & Routes** 區塊。
 4. 在網域列表中，找到結尾為 `workers.dev` 的項目 (例如 `fred-daily-cron.phileoljh.workers.dev`)。
 5. 點擊最右側的三個小點 `...`，然後選擇 **Disable Domain (停用網域)**。
+
+---
+
+### 階段五：(選用) 每日透過 Resend 自動寄送 AI 數據至 Gmail（供 Gemini 排程讀取）
+
+若您希望透過 Gemini 網頁版的「排程任務」每日自動分析最新總經數據（避免沙盒環境無法直接連網讀取網頁），可啟用獨立腳本 `send_email.py` 搭配 Resend HTTP API 的自動寄信功能。此做法只需「純寄信權限」API Key，完全不會存取您的 Google 帳號密碼或私人收件匣。
+
+> **💡 軟失敗（Soft-Fail）保護機制**：此功能為**純選用擴充**，若環境變數未設定、金鑰無效或 API 連線異常，腳本會自動略過並回傳正常狀態碼（Exit Code 0），**完全不會影響網頁生成與 Cloudflare Pages 正常部署**。
+
+#### 1. 於 Resend 申請純寄信 API Key（與選用網域驗證）
+1. 登入 [Resend](https://resend.com/) 後台（支援直接使用 GitHub 帳號登入，免費額度每月 3,000 封 / 每日 100 封）。
+2. 前往左側 **API Keys** -> 點擊 **Create API Key** -> Permission 選擇 **Sending access**（純寄信權限），建立後複製 `re_...` 開頭的金鑰。
+3. **設定寄件網域（二擇一）**：
+   * **方案 A（免綁網域，最快測試）**：若只寄給您「註冊 Resend 所使用的本人信箱」，可不綁定網域，系統將預設使用 `FRED Dashboard <onboarding@resend.dev>` 寄信。
+   * **方案 B（綁定自訂子網域，推薦長期正式使用）**：前往左側 **Domains** -> **Add Domain** 輸入子網域 `fred.hihimonitor.win`（使用子網域可隔離寄件信譽，並避免與根網域 `hihimonitor.win` 既有的 Cloudflare Email Routing MX / SPF 紀錄衝突），可一鍵登入 Cloudflare 自動寫入 SPF / DKIM DNS 紀錄；驗證完成後即可將寄件者設為 `FRED Dashboard <noreply@fred.hihimonitor.win>`。
+
+#### 2. 於本地 `.env` 與 Cloudflare Pages 設定環境變數
+* **本地測試**：將真實參數填寫於專案根目錄的 `.env`（已列於 `.gitignore`，不會上傳至 GitHub）。
+* **線上部署**：前往 Cloudflare Pages 專案 -> **Settings (設定)** -> **Environment variables (環境變數)**，新增以下變數（建議設定為 Encrypted 加密型態）：
+  * `RESEND_API_KEY`：步驟 1 產生的 `re_...` API Key。
+  * `RESEND_TO`：收件者 Gmail 信箱（供 Gemini `@Gmail` 讀取用）。
+  * `RESEND_FROM`：*(選填)* 寄件者地址（例如 `FRED Dashboard <noreply@fred.hihimonitor.win>`）；若未設定，預設使用 `FRED Dashboard <onboarding@resend.dev>`。
+
+#### 3. Gemini 網頁版排程任務提示詞（Prompt）範本
+在 Cloudflare Pages 每日排程建置完成後（例如早上 08:15 過後），可於 Gemini 排程任務設定如下指令：
+
+```text
+請使用 @Gmail 搜尋主旨包含「[FRED每日總經數據]」的最新一封信件，讀取信件內的總體經濟數據表格，為我摘要今日最新變動與關鍵風險指標。
+```
 
 ---
 
